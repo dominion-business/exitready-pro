@@ -1,0 +1,15 @@
+# Database
+instance/
+*.db
+
+# Secrets
+.env
+.env.local
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Logs
+*.log
