@@ -1,0 +1,139 @@
+/* GapAnalysis.css - Additional styling for gap analysis components */
+
+.gap-analysis-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.progress-bar-container {
+  transition: all 0.3s ease;
+}
+
+.progress-bar-fill {
+  transition: width 0.5s ease;
+}
+
+.category-item {
+  transition: background-color 0.2s ease;
+}
+
+.category-item:hover {
+  background-color: #f3f4f6;
+}
+
+.score-badge {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .8;
+  }
+}
+
+/* Donut Chart Styling */
+.donut-segment {
+  transition: opacity 0.2s ease;
+}
+
+.donut-segment:hover {
+  opacity: 1 !important;
+  filter: brightness(1.1);
+}
+
+/* Question Modal */
+.question-modal-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.radio-scale label {
+  position: relative;
+}
+
+.radio-scale input[type="radio"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-scale input[type="radio"]:hover {
+  border-color: #3b82f6;
+}
+
+.radio-scale input[type="radio"]:checked {
+  border-color: #dc2626;
+  background-color: #dc2626;
+  box-shadow: 0 0 0 2px white inset;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .gap-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    max-width: 100%;
+  }
+}
+
+/* Smooth transitions for collapsible sections */
+.collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.collapsible-content.expanded {
+  max-height: 2000px;
+  transition: max-height 0.5s ease-in;
+}
+
+/* Task status badges */
+.task-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.task-badge-todo {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.task-badge-inprogress {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.task-badge-done {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* Loading states */
+.skeleton-loader {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
