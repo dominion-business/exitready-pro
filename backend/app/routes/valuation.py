@@ -4,10 +4,13 @@ from app.models import db, User, ValuationHistory
 from app.models.valuation import Valuation, IndustryMultiple
 from app.models.business import Business
 from app.services.valuation_engine import ValuationEngine
+from app.utils.validation import validate_positive_number, validate_percentage
 from datetime import datetime
 import statistics
 import json
-import sys
+import logging
+
+logger = logging.getLogger(__name__)
         
 valuation_bp = Blueprint('valuation', __name__, url_prefix='/api/valuation')
 
@@ -44,33 +47,65 @@ def get_industry(industry_id):
 @jwt_required()
 def calculate_valuation():
     """Calculate business valuation using selected method(s)"""
-    print("\n" + "="*50, file=sys.stderr)
-    print("VALUATION CALCULATION ENDPOINT HIT", file=sys.stderr)
-    
+    logger.info("Valuation calculation endpoint called")
+
     try:
         user_id = get_jwt_identity()
         data = request.get_json()
-        
-        print(f"User ID: {user_id}", file=sys.stderr)
-        print(f"Request data: {data}", file=sys.stderr)
-        
-        # Extract inputs
+
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        logger.info(f"Valuation calculation for user: {user_id}")
+
+        # Validate and extract inputs
         method = data.get('method', 'comprehensive')
-        revenue = float(data.get('revenue', 0))
-        ebitda = float(data.get('ebitda', 0))
-        net_income = float(data.get('net_income', 0))
-        cash_flow = float(data.get('cash_flow', ebitda * 0.8 if ebitda else 0))
-        total_assets = float(data.get('total_assets', 0))
-        total_liabilities = float(data.get('total_liabilities', 0))
+
+        # Validate financial inputs
+        valid, revenue = validate_positive_number(data.get('revenue', 0), 'Revenue')
+        if not valid:
+            return revenue  # This is the error response
+
+        valid, ebitda = validate_positive_number(data.get('ebitda', 0), 'EBITDA')
+        if not valid:
+            return ebitda
+
+        valid, net_income = validate_positive_number(data.get('net_income', 0), 'Net Income')
+        if not valid:
+            return net_income
+
+        # Cash flow defaults to EBITDA * 0.8 if not provided
+        cash_flow_input = data.get('cash_flow', ebitda * 0.8 if ebitda else 0)
+        valid, cash_flow = validate_positive_number(cash_flow_input, 'Cash Flow')
+        if not valid:
+            return cash_flow
+
+        valid, total_assets = validate_positive_number(data.get('total_assets', 0), 'Total Assets')
+        if not valid:
+            return total_assets
+
+        valid, total_liabilities = validate_positive_number(data.get('total_liabilities', 0), 'Total Liabilities')
+        if not valid:
+            return total_liabilities
+
         industry_id = data.get('industry_id')
-        
-        # NEW: Get private company discount (default 25% = 0.25)
-        private_discount = float(data.get('private_company_discount', 0.25))
-        print(f"DEBUG: Private company discount: {private_discount*100}%", file=sys.stderr)
-        
+
+        # Validate private company discount (0-1 range)
+        private_discount_input = data.get('private_company_discount', 0.25)
+        valid, private_discount = validate_percentage(private_discount_input, 'Private company discount')
+        if not valid:
+            return private_discount
+
+        logger.info(f"Private company discount: {private_discount*100}%")
+
         # Optional DCF parameters - use defaults if not provided
         growth_rates = data.get('growth_rates', [0.15, 0.12, 0.10, 0.08, 0.05])
-        discount_rate = data.get('discount_rate', 0.15)
+
+        # Validate discount rate
+        discount_rate_input = data.get('discount_rate', 0.15)
+        valid, discount_rate = validate_percentage(discount_rate_input, 'Discount rate')
+        if not valid:
+            return discount_rate
         
         # Get industry multiples
         industry_multiples = {}

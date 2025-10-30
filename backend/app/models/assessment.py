@@ -182,6 +182,9 @@ class AssessmentQuestion(db.Model):
     rule_of_thumb = db.Column(db.Text, nullable=True)
     considerations = db.Column(db.Text, nullable=True)
 
+    # Scoring scale type: 'comparative' or 'documentation'
+    scale_type = db.Column(db.String(50), default='comparative')
+
     # Answer options (stored as JSON string)
     answer_options = db.Column(db.Text, nullable=True)
 

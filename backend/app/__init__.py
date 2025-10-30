@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 import sys
+import logging
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
@@ -9,13 +10,19 @@ from app.routes.assessment import assessment_bp
 # Import db from models so it can be exported
 from app.models import db
 
-# REMOVE THESE TWO LINES FROM HERE:
-# from app.routes.pdf import pdf_bp
-# app.register_blueprint(pdf_bp)
-
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    logger = logging.getLogger(__name__)
     
     # Initialize extensions
     db.init_app(app)
@@ -26,17 +33,17 @@ def create_app(config_class=Config):
     # JWT Error Handlers - MUST be inside create_app function
     @jwt.unauthorized_loader
     def unauthorized_callback(callback):
-        print(f"JWT UNAUTHORIZED: {callback}", file=sys.stderr)
+        logger.warning(f"JWT unauthorized access attempt: {callback}")
         return jsonify({'error': 'Missing or invalid token'}), 401
-    
+
     @jwt.invalid_token_loader
     def invalid_token_callback(callback):
-        print(f"JWT INVALID TOKEN: {callback}", file=sys.stderr)
+        logger.warning(f"JWT invalid token: {callback}")
         return jsonify({'error': 'Invalid token'}), 422
-    
+
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
-        print(f"JWT EXPIRED TOKEN", file=sys.stderr)
+        logger.info("JWT token expired")
         return jsonify({'error': 'Token has expired'}), 401
     
     # Register blueprints - ADD PDF BLUEPRINT HERE

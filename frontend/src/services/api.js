@@ -54,7 +54,7 @@ export const startAssessment = async () => {
 
 export const getAssessment = async () => {
   try {
-    const response = await api.get('/assessment');
+    const response = await api.get('/assessment/current');
     return { success: true, data: response.data };
   } catch (error) {
     console.error('Error getting assessment:', error);

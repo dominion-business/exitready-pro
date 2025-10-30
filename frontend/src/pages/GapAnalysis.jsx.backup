@@ -104,12 +104,12 @@ const GapAnalysis = () => {
 
   const getGapZoneInfo = (zone) => {
     const zones = {
-      'no-gaps': { label: 'No Gaps', color: '#c49e73', range: '>86%', scoreRange: '86-100%' },
-      'minor-gaps': { label: 'Minor Gaps', color: '#a7d5a8', range: '72-86%', scoreRange: '72-86%' },
-      'considerable-gaps': { label: 'Considerable Gaps', color: '#b8d4e8', range: '57-72%', scoreRange: '57-72%' },
-      'critical-gaps': { label: 'Critical Gaps', color: '#f4ebb0', range: '43-57%', scoreRange: '43-57%' },
-      'very-critical-gaps': { label: 'Very Critical Gaps', color: '#f5d7b3', range: '28-43%', scoreRange: '28-43%' },
-      'extremely-critical': { label: 'Extremely Critical', color: '#f5c9c9', range: '0-28%', scoreRange: '0-28%' }
+      'no-gaps': { label: 'No Gaps', color: '#a7d5a8', range: '>86%', scoreRange: '86-100%' },
+      'minor-gaps': { label: 'Minor Gaps', color: '#b8d4e8', range: '72-86%', scoreRange: '72-86%' },
+      'considerable-gaps': { label: 'Considerable Gaps', color: '#f4ebb0', range: '57-72%', scoreRange: '57-72%' },
+      'critical-gaps': { label: 'Critical Gaps', color: '#f5d7b3', range: '43-57%', scoreRange: '43-57%' },
+      'very-critical-gaps': { label: 'Very Critical Gaps', color: '#f5c9c9', range: '28-43%', scoreRange: '28-43%' },
+      'extremely-critical': { label: 'Extremely Critical', color: '#e8b4b4', range: '0-28%', scoreRange: '0-28%' }
     };
     return zones[zone];
   };
@@ -142,30 +142,30 @@ const GapAnalysis = () => {
   };
 
   const getScoreColor = (percent) => {
-    if (percent > 86) return 'bg-[#c49e73]';      // Gold/tan - No gaps
-    if (percent > 72) return 'bg-[#a7d5a8]';      // Light green - Minor gaps
-    if (percent > 57) return 'bg-[#b8d4e8]';      // Light blue - Considerable gaps
-    if (percent > 43) return 'bg-[#f4ebb0]';      // Light yellow - Critical gaps
-    if (percent > 28) return 'bg-[#f5d7b3]';      // Light orange/tan - Very critical gaps
-    return 'bg-[#f5c9c9]';                        // Light pink - Extremely critical
+    if (percent > 86) return 'bg-[#a7d5a8]';      // Light green - No gaps
+    if (percent > 72) return 'bg-[#b8d4e8]';      // Light blue - Minor gaps
+    if (percent > 57) return 'bg-[#f4ebb0]';      // Light yellow - Considerable gaps
+    if (percent > 43) return 'bg-[#f5d7b3]';      // Light orange/tan - Critical gaps
+    if (percent > 28) return 'bg-[#f5c9c9]';      // Light red/pink - Very critical gaps
+    return 'bg-[#e8b4b4]';                        // Darker pink - Extremely critical
   };
 
   const getScoreTextColor = (percent) => {
-    if (percent > 86) return 'text-[#8b6f47]';
-    if (percent > 72) return 'text-green-700';
-    if (percent > 57) return 'text-blue-700';
-    if (percent > 43) return 'text-yellow-700';
-    if (percent > 28) return 'text-orange-700';
-    return 'text-red-700';
+    if (percent > 86) return 'text-green-700';
+    if (percent > 72) return 'text-blue-700';
+    if (percent > 57) return 'text-yellow-700';
+    if (percent > 43) return 'text-orange-700';
+    if (percent > 28) return 'text-red-700';
+    return 'text-red-800';
   };
 
   const getScoreBadgeColor = (score) => {
-    if (score > 86) return 'bg-[#f5e6d3] text-[#8b6f47] border-[#c49e73]';  // Gold/tan - No gaps
-    if (score > 72) return 'bg-green-100 text-green-800 border-green-300';   // Green - Minor gaps
-    if (score > 57) return 'bg-blue-100 text-blue-800 border-blue-300';      // Blue - Considerable gaps
-    if (score > 43) return 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Yellow - Critical gaps
-    if (score > 28) return 'bg-orange-100 text-orange-800 border-orange-300'; // Orange - Very critical
-    return 'bg-red-100 text-red-900 border-red-400';                          // Pink - Extremely critical
+    if (score > 86) return 'bg-green-100 text-green-800 border-green-300';
+    if (score > 72) return 'bg-blue-100 text-blue-800 border-blue-300';
+    if (score > 57) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+    if (score > 43) return 'bg-orange-100 text-orange-800 border-orange-300';
+    if (score > 28) return 'bg-red-100 text-red-800 border-red-300';
+    return 'bg-red-100 text-red-900 border-red-400';
   };
 
   const handleQuestionEdit = (question, answer) => {
@@ -903,27 +903,27 @@ const GapAnalysis = () => {
                   <p className="text-sm text-gray-600 mb-3">Based on the assessment scoring scale where average performance is around 50%:</p>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#c49e73' }}></div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#a7d5a8' }}></div>
                       <span className="text-sm"><strong>86-100% (No Gaps):</strong> Exceptional performance, best in class</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#a7d5a8' }}></div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#b8d4e8' }}></div>
                       <span className="text-sm"><strong>72-86% (Minor Gaps):</strong> Strong performance, minor improvements possible</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#b8d4e8' }}></div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f4ebb0' }}></div>
                       <span className="text-sm"><strong>57-72% (Considerable Gaps):</strong> Average to good, clear room for improvement</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f4ebb0' }}></div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f5d7b3' }}></div>
                       <span className="text-sm"><strong>43-57% (Critical Gaps):</strong> Below average, significant work needed</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f5d7b3' }}></div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f5c9c9' }}></div>
                       <span className="text-sm"><strong>28-43% (Very Critical Gaps):</strong> Poor performance, urgent attention required</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f5c9c9' }}></div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: '#e8b4b4' }}></div>
                       <span className="text-sm"><strong>0-28% (Extremely Critical):</strong> Critical deficiency or not applicable</span>
                     </div>
                   </div>

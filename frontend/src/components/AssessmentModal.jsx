@@ -73,10 +73,22 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
     }
   }, [currentPage]);
 
+  // Show loading state if no questions loaded
+  if (!allQuestions || allQuestions.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-8 max-w-md">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Loading Questions...</h3>
+          <p className="text-gray-600">Please wait while we load the assessment questions.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Organize questions by category
   const organizeQuestions = () => {
     const organized = {};
-    
+
     allQuestions.forEach(q => {
       if (!organized[q.category]) {
         organized[q.category] = {
@@ -85,10 +97,10 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
           questions: []
         };
       }
-      
+
       organized[q.category].questions.push(q);
     });
-    
+
     return organized;
   };
 
@@ -134,7 +146,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
         subject: question.subject,
         question_text: question.question_text,
         answer_value: value,
-        answer_text: getAnswerText(value, question.question_type),
+        answer_text: getAnswerText(value, question.scale_type),
         comments: '',
         rule_of_thumb: question.rule_of_thumb,
         considerations: question.considerations,
@@ -153,10 +165,10 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
     }
   };
 
-  const getAnswerText = (value, questionType = 'strength') => {
+  const getAnswerText = (value, scaleType = 'comparative') => {
     if (value === 0) return 'N/A - Not Applicable';
-    
-    if (questionType === 'documentation') {
+
+    if (scaleType === 'documentation') {
       const docLabels = {
         1: "I Don't Know What You're Talking About",
         2: "I've Heard About It, But It's Not Clear",
@@ -167,9 +179,9 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
       };
       return docLabels[value] || '';
     }
-    
-    // Strength questions (default)
-    const strengthLabels = {
+
+    // Comparative questions (default)
+    const comparativeLabels = {
       1: 'Weaker Than All Others',
       2: 'Weaker Than Most',
       3: 'Weak, But Gaining Strength',
@@ -177,7 +189,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
       5: 'Stronger Than Most',
       6: 'Stronger Than All Others'
     };
-    return strengthLabels[value] || '';
+    return comparativeLabels[value] || '';
   };
 
   const getButtonColor = (value, isSelected) => {
@@ -479,7 +491,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
                             className={`p-3 rounded-lg border-2 transition-all text-center ${
                               getButtonColor(value, isSelected)
                             } ${isSelected ? 'scale-105' : ''}`}
-                            title={getAnswerText(value, question.question_type)}
+                            title={getAnswerText(value, question.scale_type)}
                           >
                             <div className="text-2xl font-bold">{shortLabels[value]}</div>
                           </button>
@@ -495,7 +507,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
                         getAnswerBadgeColor(currentAnswer)
                       }`}>
                         <Check size={14} className="mr-1" />
-                        {getAnswerText(currentAnswer, question.question_type)}
+                        {getAnswerText(currentAnswer, question.scale_type)}
                       </span>
                     </div>
                   )}
