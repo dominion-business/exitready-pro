@@ -1,6 +1,6 @@
 # assessment.py - Routes that work with YOUR existing models
 
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, send_file
 from functools import wraps
 from datetime import datetime
 import jwt
@@ -444,3 +444,80 @@ def update_task_status(current_user_id, task_id):
             'title': task.title
         }
     }), 200
+
+
+# Generate PDF report for assessment
+@assessment_bp.route('/<int:assessment_id>/pdf', methods=['GET'])
+@token_required
+def generate_assessment_pdf(current_user_id, assessment_id):
+    """Generate and download PDF report for an assessment"""
+    from app.models.assessment import Assessment, AssessmentResponse
+    from app.utils.pdf_generator import AssessmentPDFGenerator
+
+    # Get assessment and verify ownership
+    assessment = Assessment.query.filter_by(
+        id=assessment_id,
+        user_id=current_user_id
+    ).first()
+
+    if not assessment:
+        return jsonify({'error': 'Assessment not found'}), 404
+
+    # Get all responses for this assessment
+    responses = AssessmentResponse.query.filter_by(
+        assessment_id=assessment_id
+    ).all()
+
+    # Prepare assessment data
+    response_data = []
+    for response in responses:
+        response_data.append({
+            'question_id': response.question_id,
+            'question_text': response.question_text,
+            'category': response.category,
+            'subject': response.subject,
+            'answer_value': response.answer_value,
+            'answer_text': response.answer_text,
+            'score': response.score,
+            'comments': response.comments
+        })
+
+    assessment_data = {
+        'id': assessment.id,
+        'overall_score': assessment.overall_score,
+        'attractiveness_score': assessment.attractiveness_score,
+        'answered_questions': assessment.answered_questions,
+        'created_at': assessment.created_at.isoformat() if assessment.created_at else None,
+        'updated_at': assessment.updated_at.isoformat() if assessment.updated_at else None,
+        'category_scores': {
+            'financial_performance': assessment.financial_performance_score,
+            'revenue_quality': assessment.revenue_quality_score,
+            'customer_concentration': assessment.customer_concentration_score,
+            'management_team': assessment.management_team_score,
+            'competitive_position': assessment.competitive_position_score,
+            'growth_potential': assessment.growth_potential_score,
+            'intellectual_property': assessment.intellectual_property_score,
+            'legal_compliance': assessment.legal_compliance_score,
+            'owner_dependency': assessment.owner_dependency_score,
+            'strategic_positioning': assessment.strategic_positioning_score
+        },
+        'responses': response_data
+    }
+
+    # Generate PDF
+    try:
+        pdf_generator = AssessmentPDFGenerator()
+        pdf_buffer = pdf_generator.generate_report(assessment_data)
+
+        # Generate filename with date
+        filename = f"assessment_report_{assessment.id}_{datetime.now().strftime('%Y%m%d')}.pdf"
+
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        logger.error(f"Error generating PDF: {e}")
+        return jsonify({'error': 'Failed to generate PDF report'}), 500

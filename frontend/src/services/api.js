@@ -143,4 +143,37 @@ export const getSpecificAssessment = async (assessmentId) => {
   }
 };
 
+export const downloadAssessmentPDF = async (assessmentId) => {
+  try {
+    const response = await api.get(`/assessment/${assessmentId}/pdf`, {
+      responseType: 'blob'
+    });
+
+    // Create blob from response
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `assessment_report_${assessmentId}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to download PDF'
+    };
+  }
+};
+
 export default api;

@@ -5,11 +5,12 @@ import { saveAssessmentResponse } from '../services/api';
 const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClose, onSave }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [saving, setSaving] = useState(false);
   const [expandedDescription, setExpandedDescription] = useState(false);
   const scrollContainerRef = useRef(null);
   const [showScoringHelp, setShowScoringHelp] = useState(false);
   const [isScoringGuideCollapsed, setIsScoringGuideCollapsed] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const questionRefs = useRef([]);
 
   // Category descriptions
   const categoryDescriptions = {
@@ -64,12 +65,36 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
     setAnswers(initialAnswers);
   }, [answeredQuestions]);
 
-  // Reset expanded description and scroll to top when changing pages
+  // Reset expanded description and scroll to first unanswered question when changing pages
   useEffect(() => {
     setExpandedDescription(false);
-    // Scroll to top using ref
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    // Reset question refs when category changes
+    questionRefs.current = [];
+
+    // Find first unanswered question in the current category
+    if (currentCategory) {
+      const firstUnansweredIndex = currentCategory.questions.findIndex(
+        q => answers[q.question_id] === undefined
+      );
+
+      // Set to first unanswered, or 0 if all are answered
+      const targetIndex = firstUnansweredIndex !== -1 ? firstUnansweredIndex : 0;
+      setCurrentQuestionIndex(targetIndex);
+
+      // Scroll to top first
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Then scroll to target question after a brief delay
+      setTimeout(() => {
+        if (questionRefs.current[targetIndex]) {
+          questionRefs.current[targetIndex].scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }, 300);
     }
   }, [currentPage]);
 
@@ -130,7 +155,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
   const currentCategoryTotal = currentCategory ? currentCategory.questions.length : 0;
   const currentCategoryComplete = currentCategoryAnswered === currentCategoryTotal;
 
-  const handleAnswerChange = async (question, value) => {
+  const handleAnswerChange = async (question, value, questionIndex) => {
     // Update local state
     setAnswers(prev => ({
       ...prev,
@@ -158,6 +183,27 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
       if (!result.success) {
         console.error('Failed to save:', result.error);
         alert('Failed to save response: ' + result.error);
+      } else {
+        // Auto-advance to next question after successful save
+        const nextQuestionIndex = questionIndex + 1;
+        if (nextQuestionIndex < currentCategory.questions.length) {
+          // Scroll to next question within same category
+          setTimeout(() => {
+            setCurrentQuestionIndex(nextQuestionIndex);
+            if (questionRefs.current[nextQuestionIndex]) {
+              questionRefs.current[nextQuestionIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+            }
+          }, 300);
+        } else if (currentPage < totalCategories - 1) {
+          // Auto-advance to next category if this was the last question
+          setTimeout(() => {
+            setCurrentPage(currentPage + 1);
+            setCurrentQuestionIndex(0);
+          }, 500);
+        }
       }
     } catch (error) {
       console.error('Error saving answer:', error);
@@ -442,9 +488,12 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
               return (
                 <div
                   key={question.question_id}
-                  className={`p-5 rounded-lg border-2 transition ${
+                  ref={(el) => (questionRefs.current[index] = el)}
+                  className={`p-5 rounded-lg border-2 transition-all duration-300 ${
                     isAnswered
                       ? 'border-green-300 bg-green-50'
+                      : currentQuestionIndex === index
+                      ? 'border-blue-400 bg-blue-50 shadow-lg'
                       : 'border-gray-300 bg-white'
                   }`}
                 >
@@ -487,7 +536,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
                           <button
                             key={value}
                             type="button"
-                            onClick={() => handleAnswerChange(question, value)}
+                            onClick={() => handleAnswerChange(question, value, index)}
                             className={`p-3 rounded-lg border-2 transition-all text-center ${
                               getButtonColor(value, isSelected)
                             } ${isSelected ? 'scale-105' : ''}`}
