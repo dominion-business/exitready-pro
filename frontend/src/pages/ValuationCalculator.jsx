@@ -12,6 +12,8 @@ const ValuationCalculator = () => {
   const [showEVModal, setShowEVModal] = useState(false);
   const [showMethodModal, setShowMethodModal] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showQuizResult, setShowQuizResult] = useState(false);
+  const [quizRecommendation, setQuizRecommendation] = useState(null);
   const [showDiscountInfo, setShowDiscountInfo] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);  // ← ADD THIS!
   const [helpContent, setHelpContent] = useState({ title: '', content: '' });  // ← AND THIS!
@@ -28,7 +30,9 @@ const ValuationCalculator = () => {
     total_liabilities: '',
     industry_id: '',
     method: 'comprehensive',
-    private_company_discount: 25
+    private_company_discount: 25,
+    manual_multiple: '',
+    manual_multiple_type: 'ev_ebitda'
   });
 
   const debounceTimeout = useRef(null);
@@ -83,13 +87,13 @@ const ValuationCalculator = () => {
       cons: "Ignores earnings potential and intangibles",
       bestFor: "Asset-heavy businesses, real estate, or liquidation scenarios"
     },
-    rot: {
-      name: "Rule of Thumb",
-      description: "Uses industry-specific quick valuation formulas based on revenue or other key metrics. Provides a rough estimate for comparison purposes.",
-      icon: "📏",
-      pros: "Quick, easy to understand, industry-specific",
-      cons: "Very approximate, varies widely by industry",
-      bestFor: "Quick estimates or sanity checks"
+    manual: {
+      name: "Manual Multiple",
+      description: "Apply your own custom multiple to calculate valuation. Choose between EV/EBITDA, EV/Revenue, or P/E ratios based on your analysis or industry benchmarks.",
+      icon: "✏️",
+      pros: "Flexible, allows custom analysis, can match specific comps",
+      cons: "Requires knowledge of appropriate multiples",
+      bestFor: "Experienced users with specific comparable data or target multiples"
     }
   };
 
@@ -246,9 +250,9 @@ const showHelp = (field) => {
     });
 
     setFormData(prev => ({ ...prev, method: recommendedMethod }));
+    setQuizRecommendation(methodDescriptions[recommendedMethod]);
     setShowQuiz(false);
-    
-    alert(`Based on your answers, we recommend using the ${methodDescriptions[recommendedMethod].name} method!`);
+    setShowQuizResult(true);
   };
 
   const handleInputChange = (e) => {
@@ -301,7 +305,9 @@ const showHelp = (field) => {
         total_liabilities: parseFloat(formData.total_liabilities) || 0,
         industry_id: parseInt(formData.industry_id),
         method: formData.method,
-        private_company_discount: discount / 100
+        private_company_discount: discount / 100,
+        manual_multiple: parseFloat(formData.manual_multiple) || 0,
+        manual_multiple_type: formData.manual_multiple_type
       };
 
       const response = await axios.post(
@@ -771,9 +777,56 @@ const showHelp = (field) => {
                 <option value="dcf">DCF (Discounted Cash Flow)</option>
                 <option value="capitalization">Capitalization of Earnings</option>
                 <option value="nav">NAV (Net Asset Value)</option>
-                <option value="rot">Rule of Thumb</option>
+                <option value="manual">Manual Multiple</option>
               </select>
               
+              {/* Manual Multiple Fields */}
+              {formData.method === 'manual' && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-gray-900 mb-3">Manual Multiple Configuration</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Multiple Type
+                      </label>
+                      <select
+                        name="manual_multiple_type"
+                        value={formData.manual_multiple_type}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="ev_ebitda">EV/EBITDA</option>
+                        <option value="ev_revenue">EV/Revenue</option>
+                        <option value="pe">P/E (Price to Earnings)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Multiple Value
+                      </label>
+                      <input
+                        type="number"
+                        name="manual_multiple"
+                        value={formData.manual_multiple}
+                        onChange={handleInputChange}
+                        step="0.1"
+                        placeholder="e.g., 5.0"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    <strong>Tip:</strong> {
+                      formData.manual_multiple_type === 'ev_ebitda'
+                        ? 'Common EV/EBITDA multiples range from 4x-8x for small businesses, 8x-12x for mid-market.'
+                        : formData.manual_multiple_type === 'ev_revenue'
+                        ? 'Common EV/Revenue multiples range from 0.5x-2x for most industries, 2x-10x+ for SaaS/tech.'
+                        : 'Common P/E ratios range from 10x-20x for mature companies, 20x-40x+ for growth companies.'
+                    }
+                  </p>
+                </div>
+              )}
+
               {currentMethodDesc && (
                 <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-start gap-3">
@@ -969,7 +1022,7 @@ const showHelp = (field) => {
                   <li className="flex gap-3">
                     <span className="text-blue-600 font-bold">•</span>
                     <div>
-                      <strong>Industry Rules:</strong> We apply industry-specific valuation formulas
+                      <strong>Manual Multiples:</strong> You can apply custom EV/EBITDA, EV/Revenue, or P/E multiples based on your research
                     </div>
                   </li>
                 </ul>
@@ -1159,11 +1212,11 @@ const showHelp = (field) => {
                   <X size={24} />
                 </button>
               </div>
-              
+
               <p className="text-gray-600 mb-6">
                 Answer these 4 quick questions and we'll recommend the best valuation method for your business.
               </p>
-              
+
               <div className="space-y-6">
                 {quizQuestions.map((question, index) => (
                   <div key={question.id} className="border border-gray-200 rounded-lg p-4">
@@ -1191,13 +1244,63 @@ const showHelp = (field) => {
                   </div>
                 ))}
               </div>
-              
+
               <button
                 onClick={calculateQuizResult}
                 disabled={Object.keys(quizAnswers).length < quizQuestions.length}
                 className="mt-6 w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-semibold"
               >
                 Get My Recommendation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz Result Modal */}
+      {showQuizResult && quizRecommendation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">Your Recommended Method</h2>
+                <button onClick={() => setShowQuizResult(false)} className="text-gray-400 hover:text-gray-600">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="mb-6 p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
+                <div className="flex items-start gap-4">
+                  <span className="text-5xl">{quizRecommendation.icon}</span>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{quizRecommendation.name}</h3>
+                    <p className="text-gray-700 mb-3">{quizRecommendation.description}</p>
+                    <div className="space-y-2 text-sm">
+                      <p className="text-gray-700">
+                        <strong className="text-green-700">✓ Best for:</strong> {quizRecommendation.bestFor}
+                      </p>
+                      <p className="text-gray-700">
+                        <strong className="text-green-700">✓ Pros:</strong> {quizRecommendation.pros}
+                      </p>
+                      <p className="text-gray-700">
+                        <strong className="text-amber-700">⚠ Cons:</strong> {quizRecommendation.cons}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-900">
+                  <strong>✨ Great news!</strong> We've already selected this method for you. Just fill in your financial data and click "Calculate Valuation" to see your results.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowQuizResult(false)}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Continue to Calculator
               </button>
             </div>
           </div>

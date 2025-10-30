@@ -104,4 +104,43 @@ export const updateTaskStatus = async (taskId, status) => {
   }
 };
 
+export const retakeAssessment = async () => {
+  try {
+    const response = await api.post('/assessment/retake');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error retaking assessment:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to retake assessment'
+    };
+  }
+};
+
+export const getAssessmentHistory = async () => {
+  try {
+    const response = await api.get('/assessment/history');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting assessment history:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get assessment history'
+    };
+  }
+};
+
+export const getSpecificAssessment = async (assessmentId) => {
+  try {
+    const response = await api.get(`/assessment/${assessmentId}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting specific assessment:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get assessment'
+    };
+  }
+};
+
 export default api;

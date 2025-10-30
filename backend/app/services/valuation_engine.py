@@ -319,46 +319,93 @@ class ValuationEngine:
         return results
     
     # ============================================================================
-    # METHOD 5: Rule of Thumb
+    # METHOD 5: Manual Multiple
     # ============================================================================
-    
-    def calculate_rule_of_thumb(self,
-                                revenue: float,
-                                industry_rule: str,
-                                multiplier: float = None) -> Dict:
+
+    def calculate_manual_multiple(self,
+                                   revenue: float,
+                                   ebitda: float,
+                                   net_income: float,
+                                   multiple: float,
+                                   multiple_type: str = 'ev_ebitda',
+                                   apply_discount: bool = True) -> Dict:
         """
-        Industry-specific Rule of Thumb valuations
-        
+        Manual Multiple valuation - user specifies multiple and type
+
         Args:
             revenue: Annual revenue
-            industry_rule: Description of the rule (e.g., "2-3x revenue for SaaS")
-            multiplier: Revenue multiplier (e.g., 2.5 for SaaS)
-        
+            ebitda: Annual EBITDA
+            net_income: Annual net income
+            multiple: User-specified multiple value
+            multiple_type: 'ev_ebitda', 'ev_revenue', or 'pe'
+            apply_discount: Apply private company discount (default True)
+
         Returns:
             Dict with valuation
         """
         results = {
-            'method': 'Rule of Thumb',
-            'industry_rule': industry_rule,
-            'multiplier': multiplier,
+            'method': 'Manual Multiple',
+            'multiple_type': multiple_type,
+            'multiple': multiple,
             'recommended': None,
             'details': {}
         }
-        
-        if multiplier and revenue > 0:
-            # Simple revenue multiple
-            results['recommended'] = revenue * multiplier
-            results['low_range'] = revenue * (multiplier * 0.8)
-            results['high_range'] = revenue * (multiplier * 1.2)
-            
-            results['details'] = {
-                'revenue': revenue,
-                'multiplier': multiplier,
-                'reasoning': f'Industry rule of thumb: {industry_rule}'
-            }
+
+        if not multiple or multiple <= 0:
+            results['details']['error'] = 'No valid multiple provided'
+            return results
+
+        # Apply discount factor
+        discount = (1 - self.PRIVATE_COMPANY_DISCOUNT) if apply_discount else 1.0
+
+        # Calculate based on multiple type
+        if multiple_type == 'ev_ebitda':
+            if ebitda > 0:
+                results['recommended'] = ebitda * multiple * discount
+                results['low_range'] = ebitda * (multiple * 0.85) * discount
+                results['high_range'] = ebitda * (multiple * 1.15) * discount
+                results['details'] = {
+                    'ebitda': ebitda,
+                    'multiple': multiple,
+                    'discount_applied': apply_discount,
+                    'discount_rate': self.PRIVATE_COMPANY_DISCOUNT if apply_discount else 0,
+                    'calculation': f'EV = EBITDA × {multiple}x' + (f' × {discount:.2f} (discount)' if apply_discount else '')
+                }
+            else:
+                results['details']['error'] = 'EBITDA required for EV/EBITDA multiple'
+
+        elif multiple_type == 'ev_revenue':
+            if revenue > 0:
+                results['recommended'] = revenue * multiple * discount
+                results['low_range'] = revenue * (multiple * 0.85) * discount
+                results['high_range'] = revenue * (multiple * 1.15) * discount
+                results['details'] = {
+                    'revenue': revenue,
+                    'multiple': multiple,
+                    'discount_applied': apply_discount,
+                    'discount_rate': self.PRIVATE_COMPANY_DISCOUNT if apply_discount else 0,
+                    'calculation': f'EV = Revenue × {multiple}x' + (f' × {discount:.2f} (discount)' if apply_discount else '')
+                }
+            else:
+                results['details']['error'] = 'Revenue required for EV/Revenue multiple'
+
+        elif multiple_type == 'pe':
+            if net_income > 0:
+                results['recommended'] = net_income * multiple * discount
+                results['low_range'] = net_income * (multiple * 0.85) * discount
+                results['high_range'] = net_income * (multiple * 1.15) * discount
+                results['details'] = {
+                    'net_income': net_income,
+                    'multiple': multiple,
+                    'discount_applied': apply_discount,
+                    'discount_rate': self.PRIVATE_COMPANY_DISCOUNT if apply_discount else 0,
+                    'calculation': f'Value = Net Income × {multiple}x' + (f' × {discount:.2f} (discount)' if apply_discount else '')
+                }
+            else:
+                results['details']['error'] = 'Net Income required for P/E multiple'
         else:
-            results['details']['error'] = 'No multiplier provided for this industry'
-        
+            results['details']['error'] = f'Invalid multiple type: {multiple_type}'
+
         return results
     
     # ============================================================================

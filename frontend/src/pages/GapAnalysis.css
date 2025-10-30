@@ -137,3 +137,13 @@
     background-position: -200% 0;
   }
 }
+
+/* Progress bar animation */
+@keyframes growWidth {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--final-width);
+  }
+}

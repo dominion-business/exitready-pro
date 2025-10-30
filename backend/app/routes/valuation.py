@@ -9,6 +9,7 @@ from datetime import datetime
 import statistics
 import json
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
         
@@ -147,9 +148,31 @@ def calculate_valuation():
             results = engine.calculate_capitalization_of_earnings(ebitda, industry_multiples=industry_multiples)
         elif method == 'nav':
             results = engine.calculate_nav(total_assets, total_liabilities)
-        elif method == 'rot':
-            rot_description = industry_multiples.get('rule_of_thumb', 'Not available')
-            results = engine.calculate_rule_of_thumb(revenue, rot_description)
+        elif method == 'manual':
+            # Validate manual multiple input
+            manual_multiple_input = data.get('manual_multiple', 0)
+            if not manual_multiple_input or float(manual_multiple_input) <= 0:
+                return jsonify({'error': 'Manual multiple must be a positive number'}), 400
+
+            manual_multiple = float(manual_multiple_input)
+            manual_multiple_type = data.get('manual_multiple_type', 'ev_ebitda')
+
+            # Validate multiple type
+            valid_types = ['ev_ebitda', 'ev_revenue', 'pe']
+            if manual_multiple_type not in valid_types:
+                return jsonify({'error': f'Invalid multiple type. Must be one of: {", ".join(valid_types)}'}), 400
+
+            logger.info(f"Manual multiple calculation: {manual_multiple}x {manual_multiple_type} with {private_discount*100}% discount")
+
+            # Apply custom discount (same pattern as CCA)
+            original_discount = engine.PRIVATE_COMPANY_DISCOUNT
+            engine.PRIVATE_COMPANY_DISCOUNT = private_discount
+            results = engine.calculate_manual_multiple(revenue, ebitda, net_income, manual_multiple, manual_multiple_type)
+            engine.PRIVATE_COMPANY_DISCOUNT = original_discount
+
+            # Check if calculation succeeded
+            if results.get('details', {}).get('error'):
+                return jsonify({'error': results['details']['error']}), 400
         else:  # comprehensive - run all applicable methods
             print(f"DEBUG: Running comprehensive valuation", file=sys.stderr)
             print(f"DEBUG: revenue={revenue}, ebitda={ebitda}, net_income={net_income}", file=sys.stderr)
