@@ -11,6 +11,7 @@ import Layout from './components/Layout';
 import GapAnalysis from './pages/GapAnalysis';
 import ExitStrategyQuiz from './pages/ExitStrategyQuiz';
 import ExitStrategyResults from './pages/ExitStrategyResults';
+import TaskManager from './pages/TaskManager';
 
 function App() {
   return (
@@ -89,6 +90,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ExitStrategyResults />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/task-manager"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TaskManager />
                 </Layout>
               </ProtectedRoute>
             }

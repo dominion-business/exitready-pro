@@ -17,7 +17,8 @@ import {
   Edit,
   Save,
   X,
-  Compass
+  Compass,
+  CheckSquare
 } from 'lucide-react';
 import { getAssessment, getBusinessProfile, getWealthGap, saveWealthGap } from '../services/api';
 import axios from 'axios';
@@ -31,6 +32,7 @@ const EnhancedDashboard = () => {
   const [businessProfile, setBusinessProfile] = useState(null);
   const [assessment, setAssessment] = useState(null);
   const [wealthGap, setWealthGap] = useState(null);
+  const [taskStats, setTaskStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Wealth Gap Calculator State
@@ -113,6 +115,18 @@ const EnhancedDashboard = () => {
       if (wealthGapResult.success && wealthGapResult.data.wealth_gap) {
         setWealthGap(wealthGapResult.data.wealth_gap);
         populateWealthGapForm(wealthGapResult.data.wealth_gap);
+      }
+
+      // Fetch task stats
+      try {
+        const taskStatsResponse = await axios.get('http://localhost:5000/api/tasks/stats', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (taskStatsResponse.data.success) {
+          setTaskStats(taskStatsResponse.data.stats);
+        }
+      } catch (error) {
+        console.log('No tasks yet or error fetching task stats');
       }
 
     } catch (error) {
@@ -601,6 +615,67 @@ const EnhancedDashboard = () => {
             </div>
           </div>
 
+          {/* Task Manager Summary */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <CheckSquare size={28} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Task Manager</h2>
+                  <p className="text-indigo-100 text-xs">Improvement action items</p>
+                </div>
+              </div>
+
+              {taskStats && taskStats.total > 0 ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
+                      <div className="text-2xl font-bold">{taskStats.not_started}</div>
+                      <div className="text-xs text-indigo-100">Not Started</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
+                      <div className="text-2xl font-bold">{taskStats.in_progress}</div>
+                      <div className="text-xs text-indigo-100">In Progress</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
+                      <div className="text-2xl font-bold">{taskStats.completed}</div>
+                      <div className="text-xs text-indigo-100">Completed</div>
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-indigo-100">
+                    <div className="flex justify-between mb-1">
+                      <span>Completion Rate</span>
+                      <span className="font-semibold">{taskStats.completion_rate}%</span>
+                    </div>
+                    <div className="bg-white/20 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-white h-full rounded-full transition-all"
+                        style={{ width: `${taskStats.completion_rate}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-indigo-100 text-sm mb-3">Complete assessments to generate improvement tasks</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4">
+              <button
+                onClick={() => navigate('/task-manager')}
+                className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition flex items-center justify-center space-x-2"
+              >
+                <span>View Task Manager</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
           {/* Wealth Gap Section */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6 text-white">
@@ -665,7 +740,7 @@ const EnhancedDashboard = () => {
       {/* Quick Actions */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
         <h2 className="text-2xl font-bold mb-6 text-gray-900">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             onClick={() => navigate('/valuation')}
             className="flex items-center gap-4 p-4 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all group"
@@ -693,11 +768,24 @@ const EnhancedDashboard = () => {
           </button>
 
           <button
-            onClick={() => navigate('/exit-strategy-quiz')}
+            onClick={() => navigate('/task-manager')}
             className="flex items-center gap-4 p-4 border-2 border-indigo-200 rounded-xl hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
           >
             <div className="p-3 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition">
-              <Compass className="text-indigo-600" size={24} />
+              <CheckSquare className="text-indigo-600" size={24} />
+            </div>
+            <div className="text-left">
+              <h3 className="font-semibold text-gray-900">Task Manager</h3>
+              <p className="text-sm text-gray-600">Manage action items</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate('/exit-strategy-quiz')}
+            className="flex items-center gap-4 p-4 border-2 border-cyan-200 rounded-xl hover:border-cyan-400 hover:bg-cyan-50 transition-all group"
+          >
+            <div className="p-3 bg-cyan-100 rounded-lg group-hover:bg-cyan-200 transition">
+              <Compass className="text-cyan-600" size={24} />
             </div>
             <div className="text-left">
               <h3 className="font-semibold text-gray-900">Exit Strategy Quiz</h3>

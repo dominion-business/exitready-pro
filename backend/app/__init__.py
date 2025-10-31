@@ -53,6 +53,7 @@ def create_app(config_class=Config):
     from app.routes.pdf import pdf_bp  # ← MOVED HERE
     from app.routes.wealth_gap import wealth_gap_bp
     from app.routes.exit_quiz import exit_quiz_bp
+    from app.routes.task import task_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(business_bp)
@@ -61,6 +62,7 @@ def create_app(config_class=Config):
     app.register_blueprint(assessment_bp, url_prefix='/api/assessment')
     app.register_blueprint(wealth_gap_bp, url_prefix='/api/wealth-gap')
     app.register_blueprint(exit_quiz_bp, url_prefix='/api/exit-quiz')
+    app.register_blueprint(task_bp)
     
     # Create tables
     with app.app_context():

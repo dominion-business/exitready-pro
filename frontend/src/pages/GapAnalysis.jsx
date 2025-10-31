@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, PlayCircle, ChevronDown, ChevronRight, HelpCircle, X, History, RefreshCw, Calendar, Download, FileBarChart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, PlayCircle, ChevronDown, ChevronRight, HelpCircle, X, History, RefreshCw, Calendar, Download, FileBarChart, CheckSquare } from 'lucide-react';
 import { getAssessment, startAssessment, retakeAssessment, getAssessmentHistory, getSpecificAssessment, downloadAssessmentPDF, getAssessmentSummary } from '../services/api';
 import AssessmentModal from '../components/AssessmentModal';
 import QuestionModal from '../components/QuestionModal';
 import './GapAnalysis.css';
 
 const GapAnalysis = () => {
+  const navigate = useNavigate();
   const [assessment, setAssessment] = useState(null);
   const [allQuestions, setAllQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -642,7 +644,7 @@ const GapAnalysis = () => {
         </div>
 
         {/* Action Buttons - Organized in Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <button
             onClick={handleViewHistory}
             className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition shadow-sm"
@@ -652,14 +654,24 @@ const GapAnalysis = () => {
           </button>
 
           {assessment && assessment.answered_questions > 0 && (
-            <button
-              onClick={handleDownloadPDF}
-              disabled={downloadingPDF}
-              className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-green-200 text-green-700 rounded-lg hover:bg-green-50 hover:border-green-300 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download size={20} />
-              <span className="font-medium">{downloadingPDF ? 'Generating...' : 'Download'}</span>
-            </button>
+            <>
+              <button
+                onClick={() => navigate('/task-manager')}
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition shadow-sm"
+              >
+                <CheckSquare size={20} />
+                <span className="font-medium">View Tasks</span>
+              </button>
+
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloadingPDF}
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-white border-2 border-green-200 text-green-700 rounded-lg hover:bg-green-50 hover:border-green-300 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download size={20} />
+                <span className="font-medium">{downloadingPDF ? 'Generating...' : 'Download'}</span>
+              </button>
+            </>
           )}
 
           {!viewingHistoricalAssessment && assessment && assessment.answered_questions > 0 && (

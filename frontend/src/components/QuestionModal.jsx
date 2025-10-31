@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send, ChevronDown, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Send, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react';
 import { saveAssessmentResponse } from '../services/api';
 
 const QuestionModal = ({ question, assessmentId, onClose, onSave }) => {
+  const navigate = useNavigate();
   const [selectedValue, setSelectedValue] = useState(null);
   const [comments, setComments] = useState('');
   const [saving, setSaving] = useState(false);
@@ -285,12 +287,21 @@ const QuestionModal = ({ question, assessmentId, onClose, onSave }) => {
         {/* Footer with Save Button */}
         <div className="border-t border-gray-200 bg-gray-50 p-6">
           <div className="flex items-center justify-between">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 text-gray-700 hover:text-gray-900 font-semibold transition"
-            >
-              Cancel
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 text-gray-700 hover:text-gray-900 font-semibold transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => navigate('/task-manager', { state: { questionId: question.question_id } })}
+                className="flex items-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition font-medium border border-indigo-200"
+              >
+                <CheckSquare size={18} />
+                <span>View Related Tasks</span>
+              </button>
+            </div>
             <button
               onClick={handleSave}
               disabled={selectedValue === null || saving}
