@@ -13,8 +13,10 @@ class Task(db.Model):
     description = db.Column(db.Text)
     status = db.Column(db.String(50), default='not_started')  # not_started, in_progress, completed
     priority = db.Column(db.String(50), default='medium')  # low, medium, high
+    is_system_task = db.Column(db.Boolean, default=False)  # True for seeded tasks, False for user-created
 
-    # Due date and completion
+    # Dates
+    start_date = db.Column(db.Date)
     due_date = db.Column(db.Date)
     completed_at = db.Column(db.DateTime)
 
@@ -34,6 +36,8 @@ class Task(db.Model):
             'description': self.description,
             'status': self.status,
             'priority': self.priority,
+            'is_system_task': self.is_system_task,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'notes': self.notes,
