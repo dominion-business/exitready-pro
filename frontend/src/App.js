@@ -3,12 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import LoginForm from './components/LoginForm';
 import ProtectedRoute from './components/ProtectedRoute';
-import Dashboard from './pages/Dashboard';
+import EnhancedDashboard from './pages/EnhancedDashboard';
 import BusinessProfile from './pages/BusinessProfile';
 import ValuationCalculator from './pages/ValuationCalculator';
 import ValuationDashboard from './pages/ValuationDashboard';
 import Layout from './components/Layout';
 import GapAnalysis from './pages/GapAnalysis';
+import ExitStrategyQuiz from './pages/ExitStrategyQuiz';
+import ExitStrategyResults from './pages/ExitStrategyResults';
 
 function App() {
   return (
@@ -21,7 +23,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Dashboard />
+                  <EnhancedDashboard />
                 </Layout>
               </ProtectedRoute>
             }
@@ -69,7 +71,29 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
+          <Route
+            path="/exit-strategy-quiz"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ExitStrategyQuiz />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/exit-strategy-results"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ExitStrategyResults />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>

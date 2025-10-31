@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, PlayCircle, ChevronDown, ChevronRight, HelpCircle, X, History, RefreshCw, Calendar, Download } from 'lucide-react';
-import { getAssessment, startAssessment, retakeAssessment, getAssessmentHistory, getSpecificAssessment, downloadAssessmentPDF } from '../services/api';
+import { FileText, PlayCircle, ChevronDown, ChevronRight, HelpCircle, X, History, RefreshCw, Calendar, Download, FileBarChart } from 'lucide-react';
+import { getAssessment, startAssessment, retakeAssessment, getAssessmentHistory, getSpecificAssessment, downloadAssessmentPDF, getAssessmentSummary } from '../services/api';
 import AssessmentModal from '../components/AssessmentModal';
 import QuestionModal from '../components/QuestionModal';
 import './GapAnalysis.css';
@@ -26,6 +26,9 @@ const GapAnalysis = () => {
   const [intangibleAssetFilter, setIntangibleAssetFilter] = useState(null);
   const [showActivityTypeHelp, setShowActivityTypeHelp] = useState(false);
   const [showAssetTypeHelp, setShowAssetTypeHelp] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryData, setSummaryData] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
 
   useEffect(() => {
     loadAssessment();
@@ -308,6 +311,31 @@ const GapAnalysis = () => {
       alert('Failed to download PDF report');
     } finally {
       setDownloadingPDF(false);
+    }
+  };
+
+  const handleViewSummary = async () => {
+    if (!assessment || !assessment.assessment_id) {
+      alert('No assessment available to summarize');
+      return;
+    }
+
+    setLoadingSummary(true);
+    setShowSummaryModal(true);
+    try {
+      const result = await getAssessmentSummary(assessment.assessment_id);
+      if (result.success) {
+        setSummaryData(result.data);
+      } else {
+        alert('Failed to load assessment summary: ' + (result.error || 'Unknown error'));
+        setShowSummaryModal(false);
+      }
+    } catch (error) {
+      console.error('Error loading summary:', error);
+      alert('Failed to load assessment summary');
+      setShowSummaryModal(false);
+    } finally {
+      setLoadingSummary(false);
     }
   };
 
@@ -679,72 +707,104 @@ const GapAnalysis = () => {
       {/* Show Dashboard if assessment has answers */}
       {assessment.answered_questions > 0 && (
         <div className="space-y-6">
-          {/* Overall Score Card - Condensed */}
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white">
-              <div className="flex items-center justify-between gap-6">
-                {/* Left: Title and Info */}
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold mb-1">Overall Business Attractiveness</h2>
-                  <p className="text-blue-100 text-xs">
-                    {assessment.answered_questions} of {allQuestions.length} questions • {Math.round(progressPercent)}% complete
-                  </p>
-                </div>
+          {/* Overall Score Card - Redesigned */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            {/* Header Section */}
+            <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 px-8 pt-6 pb-8 text-white relative overflow-hidden">
+              {/* Decorative background elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
 
-                {/* Center: Score Display */}
-                <div className="text-center bg-white/10 rounded-xl px-6 py-3 backdrop-blur-sm">
-                  <div className="text-5xl font-bold leading-none mb-1">{Math.round(assessment.overall_score)}%</div>
-                  <div className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                    assessment.overall_score > 86 ? 'bg-[#c49e73]' :
-                    assessment.overall_score > 72 ? 'bg-[#a7d5a8]' :
-                    assessment.overall_score > 57 ? 'bg-[#b8d4e8]' :
-                    assessment.overall_score > 43 ? 'bg-[#f4ebb0]' :
-                    assessment.overall_score > 28 ? 'bg-[#f5d7b3]' : 'bg-[#f5c9c9]'
-                  } ${
-                    assessment.overall_score > 86 ? 'text-[#8b6f47]' :
-                    assessment.overall_score > 72 ? 'text-green-800' :
-                    assessment.overall_score > 57 ? 'text-blue-800' :
-                    assessment.overall_score > 43 ? 'text-yellow-800' :
-                    assessment.overall_score > 28 ? 'text-orange-800' : 'text-red-800'
-                  }`}>
-                    {assessment.overall_score > 86 ? 'No Gaps' :
-                     assessment.overall_score > 72 ? 'Minor Gaps' :
-                     assessment.overall_score > 57 ? 'Considerable Gaps' :
-                     assessment.overall_score > 43 ? 'Critical Gaps' :
-                     assessment.overall_score > 28 ? 'Very Critical Gaps' : 'Extremely Critical'}
+              <div className="relative">
+                {/* Title and Info */}
+                <div className="mb-6">
+                  <h2 className="text-3xl font-bold mb-2">Overall Business Attractiveness</h2>
+                  <div className="flex items-center space-x-4 text-blue-100">
+                    <span className="text-sm font-medium">
+                      {assessment.answered_questions} of {allQuestions.length} questions answered
+                    </span>
+                    <span className="text-sm">•</span>
+                    <span className="text-sm font-medium">{Math.round(progressPercent)}% complete</span>
                   </div>
                 </div>
 
-                {/* Right: Progress Bar and Continue Button */}
-                <div className="flex-1">
-                  {/* Progress bar */}
-                  <div className="relative bg-white/20 rounded-full h-3 overflow-hidden shadow-inner mb-2">
-                    <div
-                      key={`progress-${animationKey}`}
-                      className="h-full rounded-full bg-white shadow-sm"
-                      style={{
-                        width: 0,
-                        animation: `growWidth 2000ms cubic-bezier(0.4, 0, 0.2, 1) forwards`,
-                        animationFillMode: 'forwards',
-                        '--final-width': `${progressPercent}%`
-                      }}
-                    ></div>
-                  </div>
-
-                  {/* Continue button */}
-                  {assessment.answered_questions < allQuestions.length && !viewingHistoricalAssessment ? (
-                    <button
-                      onClick={handleStartAssessment}
-                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 font-semibold transition text-sm"
-                    >
-                      <PlayCircle size={16} />
-                      <span>Continue Assessment</span>
-                    </button>
-                  ) : (
-                    <div className="text-xs text-blue-100 text-center">
-                      {allQuestions.length - assessment.answered_questions} questions remaining
+                {/* Main Content Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Score Display */}
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                    <div className="text-center">
+                      <div className="text-6xl font-bold mb-3 leading-none">
+                        {Math.round(assessment.overall_score)}%
+                      </div>
+                      <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold shadow-lg ${
+                        assessment.overall_score > 86 ? 'bg-[#c49e73] text-[#8b6f47]' :
+                        assessment.overall_score > 72 ? 'bg-[#a7d5a8] text-green-800' :
+                        assessment.overall_score > 57 ? 'bg-[#b8d4e8] text-blue-800' :
+                        assessment.overall_score > 43 ? 'bg-[#f4ebb0] text-yellow-800' :
+                        assessment.overall_score > 28 ? 'bg-[#f5d7b3] text-orange-800' : 'bg-[#f5c9c9] text-red-800'
+                      }`}>
+                        {assessment.overall_score > 86 ? 'No Gaps' :
+                         assessment.overall_score > 72 ? 'Minor Gaps' :
+                         assessment.overall_score > 57 ? 'Considerable Gaps' :
+                         assessment.overall_score > 43 ? 'Critical Gaps' :
+                         assessment.overall_score > 28 ? 'Very Critical Gaps' : 'Extremely Critical'}
+                      </div>
+                      <div className="mt-3 text-xs text-blue-100 font-medium">Business Attractiveness Score</div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Progress & Actions */}
+                  <div className="md:col-span-2 space-y-4">
+                    {/* Progress Bar */}
+                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-semibold">Assessment Progress</span>
+                        <span className="text-sm font-bold">{Math.round(progressPercent)}%</span>
+                      </div>
+                      <div className="relative bg-white/20 rounded-full h-4 overflow-hidden shadow-inner">
+                        <div
+                          key={`progress-${animationKey}`}
+                          className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg"
+                          style={{
+                            width: 0,
+                            animation: `growWidth 2000ms cubic-bezier(0.4, 0, 0.2, 1) forwards`,
+                            animationFillMode: 'forwards',
+                            '--final-width': `${progressPercent}%`
+                          }}
+                        ></div>
+                      </div>
+                      <div className="mt-2 text-xs text-blue-100">
+                        {assessment.answered_questions < allQuestions.length
+                          ? `${allQuestions.length - assessment.answered_questions} questions remaining`
+                          : 'Assessment complete!'}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                      {assessment.answered_questions < allQuestions.length && !viewingHistoricalAssessment ? (
+                        <button
+                          onClick={handleStartAssessment}
+                          className="flex items-center justify-center space-x-2 px-5 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 hover:scale-105 font-bold transition-all shadow-lg"
+                        >
+                          <PlayCircle size={18} />
+                          <span>Continue</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-center px-5 py-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20">
+                          <span className="text-sm font-semibold text-white">Assessment Complete</span>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={handleViewSummary}
+                        className="flex items-center justify-center space-x-2 px-5 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 hover:scale-105 font-bold transition-all shadow-lg"
+                      >
+                        <FileBarChart size={18} />
+                        <span>View Summary</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1798,6 +1858,197 @@ const GapAnalysis = () => {
                 className="w-full bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition"
               >
                 Got it, thanks!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assessment Summary Modal */}
+      {showSummaryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 border-b border-blue-700 z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <FileBarChart size={32} />
+                  <div>
+                    <h2 className="text-2xl font-bold">Detailed Assessment Summary</h2>
+                    <p className="text-blue-100 text-sm">CEPA-Level Interpretation & Strategic Guidance</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowSummaryModal(false)}
+                  className="text-white hover:text-blue-200 transition"
+                >
+                  <X size={28} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            {loadingSummary ? (
+              <div className="p-12 text-center">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                <p className="mt-4 text-gray-600">Generating your detailed summary...</p>
+              </div>
+            ) : summaryData ? (
+              <div className="p-6 space-y-6">
+                {/* Overall Readiness Card */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                        {summaryData.readiness_level} Exit Readiness
+                      </h3>
+                      <p className="text-gray-700 leading-relaxed">{summaryData.readiness_description}</p>
+                    </div>
+                    <div className="ml-6 text-right">
+                      <div className="text-5xl font-bold text-blue-600">{Math.round(summaryData.overall_score)}%</div>
+                      <div className="text-sm text-gray-600 mt-1">Overall Score</div>
+                    </div>
+                  </div>
+
+                  {/* Strengths and Weaknesses */}
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="bg-white rounded-lg p-4 border border-green-200">
+                      <h4 className="font-semibold text-green-800 mb-2">Top Strengths</h4>
+                      <ul className="space-y-1">
+                        {summaryData.strengths.map((strength, idx) => (
+                          <li key={idx} className="text-sm text-gray-700">
+                            <span className="font-medium">{strength.category}</span>: {Math.round(strength.score)}%
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-orange-200">
+                      <h4 className="font-semibold text-orange-800 mb-2">Areas for Improvement</h4>
+                      <ul className="space-y-1">
+                        {summaryData.weaknesses.map((weakness, idx) => (
+                          <li key={idx} className="text-sm text-gray-700">
+                            <span className="font-medium">{weakness.category}</span>: {Math.round(weakness.score)}%
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CEPA Interpretation Sections */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-gray-900">CEPA-Level Interpretation</h3>
+
+                  {/* Executive Summary */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                    <h4 className="font-bold text-lg text-blue-900 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
+                      Executive Summary
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                      {summaryData.cepa_interpretation.executive_summary}
+                    </p>
+                  </div>
+
+                  {/* Value Drivers */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                    <h4 className="font-bold text-lg text-green-900 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
+                      Value Drivers Analysis
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {summaryData.cepa_interpretation.value_drivers}
+                    </p>
+                  </div>
+
+                  {/* Risk Factors */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                    <h4 className="font-bold text-lg text-orange-900 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-orange-600 rounded-full mr-2"></span>
+                      Risk Factors
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {summaryData.cepa_interpretation.risk_factors}
+                    </p>
+                  </div>
+
+                  {/* Transferability Analysis */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                    <h4 className="font-bold text-lg text-purple-900 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-purple-600 rounded-full mr-2"></span>
+                      Transferability Analysis
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {summaryData.cepa_interpretation.transferability_analysis}
+                    </p>
+                  </div>
+
+                  {/* Market Positioning */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-5">
+                    <h4 className="font-bold text-lg text-indigo-900 mb-3 flex items-center">
+                      <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
+                      Market Positioning
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      {summaryData.cepa_interpretation.market_positioning}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Strategic Recommendations */}
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-gray-900">Strategic Recommendations</h3>
+                  <div className="space-y-3">
+                    {summaryData.recommendations.map((rec, idx) => (
+                      <div key={idx} className="bg-white border-l-4 border-blue-600 rounded-lg p-5 shadow-sm">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-bold text-gray-900">{rec.title}</h4>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            rec.priority === 'Immediate' ? 'bg-red-100 text-red-800' :
+                            rec.priority === 'High' ? 'bg-orange-100 text-orange-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {rec.priority} Priority
+                          </span>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed">{rec.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Next Steps */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">Your Next Steps</h3>
+                  <div className="space-y-4">
+                    {summaryData.next_steps.map((step, idx) => (
+                      <div key={idx} className="flex items-start space-x-4">
+                        <div className="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">
+                          {step.step}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900 mb-1">{step.action}</h4>
+                          <p className="text-gray-700 text-sm mb-1">{step.description}</p>
+                          <span className="text-xs font-semibold text-green-700">Timeframe: {step.timeframe}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <p className="text-gray-600">No summary data available</p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
+              <button
+                onClick={() => setShowSummaryModal(false)}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+              >
+                Close Summary
               </button>
             </div>
           </div>

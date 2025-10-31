@@ -11,6 +11,7 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
   const [isScoringGuideCollapsed, setIsScoringGuideCollapsed] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const questionRefs = useRef([]);
+  const [expandedGuidance, setExpandedGuidance] = useState({});
 
   // Category descriptions
   const categoryDescriptions = {
@@ -489,86 +490,150 @@ const AssessmentModal = ({ assessmentId, allQuestions, answeredQuestions, onClos
                 <div
                   key={question.question_id}
                   ref={(el) => (questionRefs.current[index] = el)}
-                  className={`p-5 rounded-lg border-2 transition-all duration-300 ${
+                  className={`rounded-lg border-2 transition-all duration-300 overflow-hidden ${
                     isAnswered
-                      ? 'border-green-300 bg-green-50'
+                      ? 'border-green-300 bg-white'
                       : currentQuestionIndex === index
-                      ? 'border-blue-400 bg-blue-50 shadow-lg'
+                      ? 'border-blue-400 bg-white shadow-lg'
                       : 'border-gray-300 bg-white'
                   }`}
                 >
-                  {/* Question Number and Text */}
-                  <div className="mb-4">
+                  {/* Question Header - Enhanced */}
+                  <div className={`p-5 ${
+                    isAnswered
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                      : currentQuestionIndex === index
+                      ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700'
+                      : 'bg-gradient-to-r from-gray-600 to-gray-700'
+                  } text-white`}>
                     <div className="flex items-start space-x-3">
-                      <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                      <span className="flex-shrink-0 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center font-bold text-lg border-2 border-white/30">
                         {index + 1}
                       </span>
                       <div className="flex-1">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1">
-                          {question.question_title || question.subject}
+                        <h4 className="text-xs font-semibold text-white/80 uppercase tracking-wide mb-1">
+                          Subject
                         </h4>
-                        <p className="text-sm text-gray-800">
-                          {question.question_text}
+                        <p className="text-lg font-bold mb-2">
+                          {question.question_title || question.subject}
                         </p>
+                        <div className="pt-2 border-t border-white/20">
+                          <h4 className="text-xs font-semibold text-white/80 uppercase tracking-wide mb-1">
+                            Question
+                          </h4>
+                          <p className="text-sm leading-relaxed">
+                            {question.question_text}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Button Scale 0-6 */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-medium text-gray-700">
-                      Select your response (0 = Not Applicable):
-                    </label>
-                    <div className="grid grid-cols-7 gap-2">
-                      {[0, 1, 2, 3, 4, 5, 6].map((value) => {
-                        const isSelected = currentAnswer === value;
-                        const shortLabels = {
-                          0: 'N/A',
-                          1: '1',
-                          2: '2',
-                          3: '3',
-                          4: '4',
-                          5: '5',
-                          6: '6'
-                        };
+                  {/* Answer Section */}
+                  <div className="p-5 bg-gray-50">
+                    {/* Button Scale 0-6 */}
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-7 gap-2">
+                        {[0, 1, 2, 3, 4, 5, 6].map((value) => {
+                          const isSelected = currentAnswer === value;
+                          const shortLabels = {
+                            0: 'N/A',
+                            1: '1',
+                            2: '2',
+                            3: '3',
+                            4: '4',
+                            5: '5',
+                            6: '6'
+                          };
 
-                        return (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => handleAnswerChange(question, value, index)}
-                            className={`p-3 rounded-lg border-2 transition-all text-center ${
-                              getButtonColor(value, isSelected)
-                            } ${isSelected ? 'scale-105' : ''}`}
-                            title={getAnswerText(value, question.scale_type)}
-                          >
-                            <div className="text-2xl font-bold">{shortLabels[value]}</div>
-                          </button>
-                        );
-                      })}
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => handleAnswerChange(question, value, index)}
+                              className={`p-3 rounded-lg border-2 transition-all text-center ${
+                                getButtonColor(value, isSelected)
+                              } ${isSelected ? 'scale-105' : ''}`}
+                              title={getAnswerText(value, question.scale_type)}
+                            >
+                              <div className="text-2xl font-bold">{shortLabels[value]}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+
+                    {/* Answered Badge */}
+                    {isAnswered && (
+                      <div className="mt-3 flex items-center justify-center">
+                        <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border-2 ${
+                          getAnswerBadgeColor(currentAnswer)
+                        }`}>
+                          <Check size={16} className="mr-2" />
+                          {getAnswerText(currentAnswer, question.scale_type)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Answered Badge */}
-                  {isAnswered && (
-                    <div className="mt-3 flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                        getAnswerBadgeColor(currentAnswer)
-                      }`}>
-                        <Check size={14} className="mr-1" />
-                        {getAnswerText(currentAnswer, question.scale_type)}
-                      </span>
-                    </div>
-                  )}
+                  {/* Collapsible Guidance Sections */}
+                  <div className="border-t border-gray-200">
+                    {/* Rule of Thumb - Collapsible */}
+                    {question.rule_of_thumb && (
+                      <div className="border-b border-gray-200">
+                        <button
+                          onClick={() => setExpandedGuidance({
+                            ...expandedGuidance,
+                            [`${question.question_id}_rule`]: !expandedGuidance[`${question.question_id}_rule`]
+                          })}
+                          className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition text-left"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <span className="text-base">💡</span>
+                            <span className="font-semibold text-gray-900 text-sm">Rule of Thumb</span>
+                          </div>
+                          {expandedGuidance[`${question.question_id}_rule`] ? (
+                            <ChevronDown size={18} className="text-gray-500" />
+                          ) : (
+                            <ChevronRight size={18} className="text-gray-500" />
+                          )}
+                        </button>
+                        {expandedGuidance[`${question.question_id}_rule`] && (
+                          <div className="px-5 pb-4 bg-blue-50">
+                            <p className="text-xs text-gray-700 leading-relaxed">{question.rule_of_thumb}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Rule of Thumb (if exists) */}
-                  {question.rule_of_thumb && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                      <p className="text-xs text-blue-900">
-                        <strong>💡 Rule of Thumb:</strong> {question.rule_of_thumb}
-                      </p>
-                    </div>
-                  )}
+                    {/* Considerations - Collapsible */}
+                    {question.considerations && (
+                      <div>
+                        <button
+                          onClick={() => setExpandedGuidance({
+                            ...expandedGuidance,
+                            [`${question.question_id}_consider`]: !expandedGuidance[`${question.question_id}_consider`]
+                          })}
+                          className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition text-left"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <span className="text-base">📋</span>
+                            <span className="font-semibold text-gray-900 text-sm">Why This Matters</span>
+                          </div>
+                          {expandedGuidance[`${question.question_id}_consider`] ? (
+                            <ChevronDown size={18} className="text-gray-500" />
+                          ) : (
+                            <ChevronRight size={18} className="text-gray-500" />
+                          )}
+                        </button>
+                        {expandedGuidance[`${question.question_id}_consider`] && (
+                          <div className="px-5 pb-4 bg-green-50">
+                            <p className="text-xs text-gray-700 leading-relaxed">{question.considerations}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}

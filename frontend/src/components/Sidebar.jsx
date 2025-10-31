@@ -10,7 +10,7 @@ const Sidebar = () => {
 
     const menuItems = [
         { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-        { path: '/business-profile', icon: Building2, label: 'Business Profile' },
+        { path: '/business-profile', icon: Building2, label: 'Client Profile' },
         { path: '/valuation', icon: Calculator, label: 'Valuation' },
         { path: '/valuation-dashboard', icon: TrendingUp, label: 'Valuation Dashboard' },
         { path: '/gap-analysis', icon: ClipboardCheck, label: 'Gap Analysis' },

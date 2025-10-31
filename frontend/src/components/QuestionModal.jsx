@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Send } from 'lucide-react';
+import { X, Send, ChevronDown, ChevronRight } from 'lucide-react';
 import { saveAssessmentResponse } from '../services/api';
 
 const QuestionModal = ({ question, assessmentId, onClose, onSave }) => {
   const [selectedValue, setSelectedValue] = useState(null);
   const [comments, setComments] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showRuleOfThumb, setShowRuleOfThumb] = useState(false);
+  const [showConsiderations, setShowConsiderations] = useState(false);
 
   useEffect(() => {
     if (question) {
@@ -134,88 +136,118 @@ const QuestionModal = ({ question, assessmentId, onClose, onSave }) => {
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
-            {/* Question Section */}
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Subject</h3>
-                <p className="text-gray-900">{question.subject}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Question</h3>
-                <p className="text-gray-900">{question.question_text}</p>
-              </div>
-
-              {/* Button Scale 0-6 - Matching Assessment */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Select your response (0 = Not Applicable):
-                </label>
-                <div className="grid grid-cols-7 gap-2">
-                  {[0, 1, 2, 3, 4, 5, 6].map((value) => {
-                    const isSelected = selectedValue === value;
-                    const shortLabels = {
-                      0: 'N/A',
-                      1: '1',
-                      2: '2',
-                      3: '3',
-                      4: '4',
-                      5: '5',
-                      6: '6'
-                    };
-
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setSelectedValue(value)}
-                        className={`p-3 rounded-lg border-2 transition-all text-center ${
-                          getButtonColor(value, isSelected)
-                        } ${isSelected ? 'scale-105' : ''}`}
-                        title={getAnswerText(value, question.question_type)}
-                      >
-                        <div className="text-2xl font-bold">{shortLabels[value]}</div>
-                      </button>
-                    );
-                  })}
+            {/* Question Section - Enhanced */}
+            <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-1">Subject</h3>
+                  <p className="text-2xl font-bold">{question.subject}</p>
                 </div>
-                {selectedValue !== null && (
-                  <p className="mt-2 text-sm text-gray-600 text-center">
-                    {getAnswerText(selectedValue, question.question_type)}
-                  </p>
-                )}
+
+                <div className="pt-2 border-t border-white/20">
+                  <h3 className="text-xs font-semibold text-blue-100 uppercase tracking-wide mb-2">Question</h3>
+                  <p className="text-base leading-relaxed">{question.question_text}</p>
+                </div>
               </div>
             </div>
 
-            {/* Rule of Thumb */}
-            {question.rule_of_thumb && (
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="mr-2">💡</span>
-                  Rule of thumb
-                </h3>
-                <p className="text-sm text-gray-700">{question.rule_of_thumb}</p>
-              </div>
-            )}
+            {/* Button Scale 0-6 */}
+            <div>
+              <div className="grid grid-cols-7 gap-2">
+                {[0, 1, 2, 3, 4, 5, 6].map((value) => {
+                  const isSelected = selectedValue === value;
+                  const shortLabels = {
+                    0: 'N/A',
+                    1: '1',
+                    2: '2',
+                    3: '3',
+                    4: '4',
+                    5: '5',
+                    6: '6'
+                  };
 
-            {/* Considerations */}
-            {question.considerations && (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
-                  <span className="mr-2">📋</span>
-                  Consider
-                </h3>
-                {Array.isArray(question.considerations) ? (
-                  <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
-                    {question.considerations.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-gray-700">{question.considerations}</p>
-                )}
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSelectedValue(value)}
+                      className={`p-3 rounded-lg border-2 transition-all text-center ${
+                        getButtonColor(value, isSelected)
+                      } ${isSelected ? 'scale-105' : ''}`}
+                      title={getAnswerText(value, question.question_type)}
+                    >
+                      <div className="text-2xl font-bold">{shortLabels[value]}</div>
+                    </button>
+                  );
+                })}
               </div>
-            )}
+              {selectedValue !== null && (
+                <p className="mt-2 text-sm text-gray-600 text-center font-medium">
+                  {getAnswerText(selectedValue, question.question_type)}
+                </p>
+              )}
+            </div>
+
+            {/* Guidance Section - Collapsible */}
+            <div className="space-y-3">
+              {/* Rule of Thumb - Collapsible */}
+              {question.rule_of_thumb && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                  <button
+                    onClick={() => setShowRuleOfThumb(!showRuleOfThumb)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">💡</span>
+                      <span className="font-semibold text-gray-900">Rule of Thumb</span>
+                    </div>
+                    {showRuleOfThumb ? (
+                      <ChevronDown size={20} className="text-gray-500" />
+                    ) : (
+                      <ChevronRight size={20} className="text-gray-500" />
+                    )}
+                  </button>
+                  {showRuleOfThumb && (
+                    <div className="px-4 pb-4 pt-2 bg-blue-50 border-t border-gray-200">
+                      <p className="text-sm text-gray-700 leading-relaxed">{question.rule_of_thumb}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Considerations - Collapsible */}
+              {question.considerations && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                  <button
+                    onClick={() => setShowConsiderations(!showConsiderations)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">📋</span>
+                      <span className="font-semibold text-gray-900">Why This Matters</span>
+                    </div>
+                    {showConsiderations ? (
+                      <ChevronDown size={20} className="text-gray-500" />
+                    ) : (
+                      <ChevronRight size={20} className="text-gray-500" />
+                    )}
+                  </button>
+                  {showConsiderations && (
+                    <div className="px-4 pb-4 pt-2 bg-green-50 border-t border-gray-200">
+                      {Array.isArray(question.considerations) ? (
+                        <ul className="list-disc list-inside space-y-2 text-sm text-gray-700 leading-relaxed">
+                          {question.considerations.map((item, index) => (
+                            <li key={index}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-700 leading-relaxed">{question.considerations}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Related Task */}
             {question.related_task && (

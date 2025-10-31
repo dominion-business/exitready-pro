@@ -11,6 +11,25 @@ const BusinessProfile = () => {
   const [saveStatus, setSaveStatus] = useState('');
 
   const [formData, setFormData] = useState({
+    // Client Personal Information
+    client_first_name: '',
+    client_last_name: '',
+    client_email: '',
+    client_phone: '',
+    client_date_of_birth: '',
+    client_address: '',
+    client_city: '',
+    client_state: '',
+    client_zip: '',
+    // Spouse/Partner Information
+    spouse_name: '',
+    spouse_email: '',
+    spouse_phone: '',
+    spouse_involved_in_business: false,
+    // Family & Dependents
+    num_dependents: '',
+    dependents_info: [],
+    // Business Information
     business_name: '',
     industry: '',
     employees: '',
@@ -18,7 +37,30 @@ const BusinessProfile = () => {
     primary_location: '',
     primary_market: '',
     registration_type: '',
-    owners: [{ name: '', ownership_percentage: '' }]
+    owners: [{ name: '', ownership_percentage: '' }],
+    // Exit planning fields
+    exit_horizon: '',
+    preferred_exit_type: '',
+    key_motivations: [],
+    deal_breakers: [],
+    // Strategic assets
+    has_proprietary_tech: false,
+    has_patents_ip: false,
+    has_recurring_revenue: false,
+    recurring_revenue_percentage: '',
+    // Financials
+    gross_margin: '',
+    growth_rate: '',
+    customer_concentration: '',
+    // Succession & team
+    has_management_team: false,
+    successor_identified: false,
+    successor_type: '',
+    // Advisory team
+    has_attorney: false,
+    has_accountant: false,
+    has_financial_advisor: false,
+    has_exit_advisor: false
   });
 
   useEffect(() => {
@@ -34,7 +76,36 @@ const BusinessProfile = () => {
 
       if (response.data.success && response.data.profile) {
         const profile = response.data.profile;
+
+        // Parse JSON fields
+        const parseJSON = (field) => {
+          try {
+            return typeof field === 'string' ? JSON.parse(field) : field;
+          } catch {
+            return field || [];
+          }
+        };
+
         setFormData({
+          // Client Personal Information
+          client_first_name: profile.client_first_name || '',
+          client_last_name: profile.client_last_name || '',
+          client_email: profile.client_email || '',
+          client_phone: profile.client_phone || '',
+          client_date_of_birth: profile.client_date_of_birth || '',
+          client_address: profile.client_address || '',
+          client_city: profile.client_city || '',
+          client_state: profile.client_state || '',
+          client_zip: profile.client_zip || '',
+          // Spouse/Partner Information
+          spouse_name: profile.spouse_name || '',
+          spouse_email: profile.spouse_email || '',
+          spouse_phone: profile.spouse_phone || '',
+          spouse_involved_in_business: profile.spouse_involved_in_business || false,
+          // Family & Dependents
+          num_dependents: profile.num_dependents || '',
+          dependents_info: parseJSON(profile.dependents_info) || [],
+          // Business Information
           business_name: profile.business_name || '',
           industry: profile.industry || '',
           employees: profile.employees || '',
@@ -43,8 +114,31 @@ const BusinessProfile = () => {
           primary_market: profile.primary_market || '',
           registration_type: profile.registration_type || '',
           owners: profile.owners && profile.owners.length > 0
-            ? profile.owners
-            : [{ name: '', ownership_percentage: '' }]
+            ? parseJSON(profile.owners)
+            : [{ name: '', ownership_percentage: '' }],
+          // Exit planning fields
+          exit_horizon: profile.exit_horizon || '',
+          preferred_exit_type: profile.preferred_exit_type || '',
+          key_motivations: parseJSON(profile.key_motivations) || [],
+          deal_breakers: parseJSON(profile.deal_breakers) || [],
+          // Strategic assets
+          has_proprietary_tech: profile.has_proprietary_tech || false,
+          has_patents_ip: profile.has_patents_ip || false,
+          has_recurring_revenue: profile.has_recurring_revenue || false,
+          recurring_revenue_percentage: profile.recurring_revenue_percentage || '',
+          // Financials
+          gross_margin: profile.gross_margin || '',
+          growth_rate: profile.growth_rate || '',
+          customer_concentration: profile.customer_concentration || '',
+          // Succession & team
+          has_management_team: profile.has_management_team || false,
+          successor_identified: profile.successor_identified || false,
+          successor_type: profile.successor_type || '',
+          // Advisory team
+          has_attorney: profile.has_attorney || false,
+          has_accountant: profile.has_accountant || false,
+          has_financial_advisor: profile.has_financial_advisor || false,
+          has_exit_advisor: profile.has_exit_advisor || false
         });
       }
     } catch (error) {
@@ -53,10 +147,19 @@ const BusinessProfile = () => {
   };
 
   const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value
     });
+  };
+
+  const handleMultiSelectChange = (field, value) => {
+    const currentValues = formData[field] || [];
+    const newValues = currentValues.includes(value)
+      ? currentValues.filter(v => v !== value)
+      : [...currentValues, value];
+    setFormData({ ...formData, [field]: newValues });
   };
 
   const handleOwnerChange = (index, field, value) => {
@@ -160,9 +263,9 @@ const BusinessProfile = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Building2 className="text-blue-600" size={32} />
-            Business Profile
+            Client Profile
           </h1>
-          <p className="text-gray-600 mt-1">Manage your business information</p>
+          <p className="text-gray-600 mt-1">Manage your client and business information</p>
         </div>
 
         {saveStatus === 'success' && (
@@ -178,8 +281,237 @@ const BusinessProfile = () => {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-8 space-y-6">
-          {/* Business Name & Industry */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Client Personal Information Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Client Personal Information</h2>
+
+            {/* Client Name */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  name="client_first_name"
+                  value={formData.client_first_name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Client's first name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  name="client_last_name"
+                  value={formData.client_last_name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Client's last name"
+                />
+              </div>
+            </div>
+
+            {/* Client Contact */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="client_email"
+                  value={formData.client_email}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="client@email.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  name="client_phone"
+                  value={formData.client_phone}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  name="client_date_of_birth"
+                  value={formData.client_date_of_birth}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Client Address */}
+            <div className="grid grid-cols-1 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="client_address"
+                  value={formData.client_address}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Street address"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  name="client_city"
+                  value={formData.client_city}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="City"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  State
+                </label>
+                <input
+                  type="text"
+                  name="client_state"
+                  value={formData.client_state}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="State"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ZIP Code
+                </label>
+                <input
+                  type="text"
+                  name="client_zip"
+                  value={formData.client_zip}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="ZIP"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Spouse/Partner Information Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Spouse/Partner Information</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Spouse/Partner Name
+                </label>
+                <input
+                  type="text"
+                  name="spouse_name"
+                  value={formData.spouse_name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="spouse_email"
+                  value={formData.spouse_email}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="spouse@email.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  name="spouse_phone"
+                  value={formData.spouse_phone}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="spouse_involved_in_business"
+                  checked={formData.spouse_involved_in_business}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Spouse/Partner is involved in the business</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Family & Dependents Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Family & Dependents</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Dependents
+                </label>
+                <input
+                  type="number"
+                  name="num_dependents"
+                  value={formData.num_dependents}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Business Information Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Information</h2>
+
+            {/* Business Name & Industry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Business Name *
@@ -371,6 +703,309 @@ const BusinessProfile = () => {
             <p className="text-xs text-gray-500 mt-2">
               Total ownership: {formData.owners.reduce((sum, owner) => sum + (parseFloat(owner.ownership_percentage) || 0), 0).toFixed(2)}%
             </p>
+          </div>
+          </div>
+
+          {/* Exit Planning Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Exit Planning</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Exit Horizon
+                </label>
+                <select
+                  name="exit_horizon"
+                  value={formData.exit_horizon}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select timeline</option>
+                  <option value="0-2 years">0-2 years</option>
+                  <option value="2-5 years">2-5 years</option>
+                  <option value="5-10 years">5-10 years</option>
+                  <option value="10+ years">10+ years</option>
+                  <option value="Exploring options">Exploring options</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preferred Exit Type
+                </label>
+                <select
+                  name="preferred_exit_type"
+                  value={formData.preferred_exit_type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select exit type</option>
+                  <option value="Strategic Sale">Strategic Sale</option>
+                  <option value="Private Equity Sale">Private Equity Sale</option>
+                  <option value="Family Succession">Family Succession</option>
+                  <option value="Management Buyout">Management Buyout</option>
+                  <option value="ESOP">ESOP</option>
+                  <option value="IPO">IPO</option>
+                  <option value="Gradual Wind Down">Gradual Wind Down</option>
+                  <option value="Undecided">Undecided</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Key Motivations (Select all that apply)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['Maximize valuation', 'Retire/lifestyle change', 'Preserve legacy', 'Reward employees', 'Reduce risk', 'Capitalize on market timing'].map(motivation => (
+                  <label key={motivation} className="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(formData.key_motivations || []).includes(motivation)}
+                      onChange={() => handleMultiSelectChange('key_motivations', motivation)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{motivation}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Deal Breakers (Select all that apply)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {['Layoffs', 'Location closure', 'Culture change', 'Equity rollover required', 'Long earn-out', 'Non-compete'].map(breaker => (
+                  <label key={breaker} className="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={(formData.deal_breakers || []).includes(breaker)}
+                      onChange={() => handleMultiSelectChange('deal_breakers', breaker)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>{breaker}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Financials & Operations Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Financials & Operations</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gross Margin (%)
+                </label>
+                <input
+                  type="number"
+                  name="gross_margin"
+                  value={formData.gross_margin}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., 65"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Annual Growth Rate (%)
+                </label>
+                <input
+                  type="number"
+                  name="growth_rate"
+                  value={formData.growth_rate}
+                  onChange={handleChange}
+                  step="0.1"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., 15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Customer Concentration
+                </label>
+                <select
+                  name="customer_concentration"
+                  value={formData.customer_concentration}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select level</option>
+                  <option value="Low">Low (no customer >10%)</option>
+                  <option value="Medium">Medium (largest 10-25%)</option>
+                  <option value="High">High (largest >25%)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                  <input
+                    type="checkbox"
+                    name="has_recurring_revenue"
+                    checked={formData.has_recurring_revenue}
+                    onChange={handleChange}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Has Recurring Revenue</span>
+                </label>
+                {formData.has_recurring_revenue && (
+                  <input
+                    type="number"
+                    name="recurring_revenue_percentage"
+                    value={formData.recurring_revenue_percentage}
+                    onChange={handleChange}
+                    min="0"
+                    max="100"
+                    step="1"
+                    className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="% of revenue that's recurring"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Strategic Assets Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Strategic Assets</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_proprietary_tech"
+                  checked={formData.has_proprietary_tech}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Proprietary Technology</span>
+              </label>
+
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_patents_ip"
+                  checked={formData.has_patents_ip}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Patents or IP Portfolio</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Succession & Team Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Succession & Team</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_management_team"
+                  checked={formData.has_management_team}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Capable Management Team in Place</span>
+              </label>
+
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="successor_identified"
+                  checked={formData.successor_identified}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Successor Identified</span>
+              </label>
+            </div>
+
+            {formData.successor_identified && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Successor Type
+                </label>
+                <select
+                  name="successor_type"
+                  value={formData.successor_type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select type</option>
+                  <option value="Family">Family Member</option>
+                  <option value="Management">Current Management</option>
+                  <option value="External">External Candidate</option>
+                  <option value="Key Employee">Key Employee</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Advisory Team Section */}
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Advisory Team</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Check which advisors you currently have on your team
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_attorney"
+                  checked={formData.has_attorney}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Business Attorney</span>
+              </label>
+
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_accountant"
+                  checked={formData.has_accountant}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>CPA / Accountant</span>
+              </label>
+
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_financial_advisor"
+                  checked={formData.has_financial_advisor}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Financial Advisor</span>
+              </label>
+
+              <label className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="has_exit_advisor"
+                  checked={formData.has_exit_advisor}
+                  onChange={handleChange}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Exit / M&A Advisor</span>
+              </label>
+            </div>
           </div>
 
           {/* Submit Button */}

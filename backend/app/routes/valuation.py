@@ -816,7 +816,8 @@ def get_valuation_history():
                 'method': val.method,
                 'created_at': val.created_at.isoformat(),
                 'low_range': val.low_range,
-                'high_range': val.high_range
+                'high_range': val.high_range,
+                'input_data': val.input_data  # Include input_data for financials
             })
         
         # Add advanced valuations

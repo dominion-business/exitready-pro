@@ -176,4 +176,124 @@ export const downloadAssessmentPDF = async (assessmentId) => {
   }
 };
 
+export const getAssessmentSummary = async (assessmentId) => {
+  try {
+    const response = await api.get(`/assessment/${assessmentId}/summary`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting assessment summary:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get assessment summary'
+    };
+  }
+};
+
+// Wealth Gap API Functions
+export const getWealthGap = async () => {
+  try {
+    const response = await api.get('/wealth-gap');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting wealth gap:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get wealth gap'
+    };
+  }
+};
+
+export const saveWealthGap = async (wealthGapData) => {
+  try {
+    const response = await api.post('/wealth-gap', wealthGapData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error saving wealth gap:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to save wealth gap'
+    };
+  }
+};
+
+export const calculateWealthGap = async (wealthGapData) => {
+  try {
+    const response = await api.post('/wealth-gap/calculate', wealthGapData);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error calculating wealth gap:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to calculate wealth gap'
+    };
+  }
+};
+
+// Business Profile API Functions
+export const getBusinessProfile = async () => {
+  try {
+    const response = await api.get('/business/profile');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting business profile:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get business profile'
+    };
+  }
+};
+
+// Exit Quiz API Functions
+export const getExitQuizQuestions = async () => {
+  try {
+    const response = await api.get('/exit-quiz/questions');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting quiz questions:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get quiz questions'
+    };
+  }
+};
+
+export const submitExitQuiz = async (responses) => {
+  try {
+    const response = await api.post('/exit-quiz/submit', { responses });
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error submitting quiz:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to submit quiz'
+    };
+  }
+};
+
+export const getExitQuizResults = async () => {
+  try {
+    const response = await api.get('/exit-quiz/results');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting quiz results:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get quiz results'
+    };
+  }
+};
+
+export const getExitQuizHistory = async () => {
+  try {
+    const response = await api.get('/exit-quiz/history');
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Error getting quiz history:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || 'Failed to get quiz history'
+    };
+  }
+};
+
 export default api;

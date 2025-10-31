@@ -521,3 +521,371 @@ def generate_assessment_pdf(current_user_id, assessment_id):
     except Exception as e:
         logger.error(f"Error generating PDF: {e}")
         return jsonify({'error': 'Failed to generate PDF report'}), 500
+
+
+# Get detailed CEPA-level assessment summary
+@assessment_bp.route('/<int:assessment_id>/summary', methods=['GET'])
+@token_required
+def get_assessment_summary(current_user_id, assessment_id):
+    """Generate a detailed CEPA-level interpretation and summary of assessment results"""
+    from app.models.assessment import Assessment, AssessmentResponse, AssessmentQuestion
+
+    # Get assessment and verify ownership
+    assessment = Assessment.query.filter_by(
+        id=assessment_id,
+        user_id=current_user_id
+    ).first()
+
+    if not assessment:
+        return jsonify({'error': 'Assessment not found'}), 404
+
+    # Get all responses for this assessment
+    responses = AssessmentResponse.query.filter_by(
+        assessment_id=assessment_id
+    ).all()
+
+    if not responses:
+        return jsonify({'error': 'No responses found for this assessment'}), 404
+
+    # Calculate category-specific insights
+    categories = {
+        'financial_performance': {'score': assessment.financial_performance_score, 'name': 'Financial Health', 'responses': []},
+        'revenue_quality': {'score': assessment.revenue_quality_score, 'name': 'Revenue Quality', 'responses': []},
+        'customer_concentration': {'score': assessment.customer_concentration_score, 'name': 'Customer Base', 'responses': []},
+        'management_team': {'score': assessment.management_team_score, 'name': 'Management Team', 'responses': []},
+        'competitive_position': {'score': assessment.competitive_position_score, 'name': 'Competitive Position', 'responses': []},
+        'growth_potential': {'score': assessment.growth_potential_score, 'name': 'Growth Trajectory', 'responses': []},
+        'intellectual_property': {'score': assessment.intellectual_property_score, 'name': 'Intellectual Property', 'responses': []},
+        'legal_compliance': {'score': assessment.legal_compliance_score, 'name': 'Legal & Compliance', 'responses': []},
+        'owner_dependency': {'score': assessment.owner_dependency_score, 'name': 'Owner Dependency', 'responses': []},
+        'strategic_positioning': {'score': assessment.strategic_positioning_score, 'name': 'Strategic Position', 'responses': []}
+    }
+
+    # Group responses by category
+    for response in responses:
+        if response.category in categories:
+            categories[response.category]['responses'].append({
+                'question_id': response.question_id,
+                'subject': response.subject,
+                'score': response.score,
+                'answer_value': response.answer_value
+            })
+
+    # Identify strengths (top 3 categories)
+    sorted_categories = sorted(categories.items(), key=lambda x: x[1]['score'], reverse=True)
+    strengths = [{'category': cat[1]['name'], 'score': cat[1]['score']} for cat in sorted_categories[:3] if cat[1]['score'] > 0]
+
+    # Identify critical gaps (bottom 3 categories with non-zero scores)
+    weaknesses = [{'category': cat[1]['name'], 'score': cat[1]['score']} for cat in reversed(sorted_categories) if cat[1]['score'] > 0][:3]
+
+    # Count gap distribution
+    gap_distribution = {
+        'no_gaps': 0,           # >86%
+        'minor_gaps': 0,        # 72-86%
+        'considerable_gaps': 0, # 57-72%
+        'critical_gaps': 0,     # 43-57%
+        'very_critical': 0,     # 28-43%
+        'extremely_critical': 0 # 0-28%
+    }
+
+    for response in responses:
+        if response.answer_value == 0:  # Skip N/A responses
+            continue
+        score = response.score
+        if score > 86:
+            gap_distribution['no_gaps'] += 1
+        elif score > 72:
+            gap_distribution['minor_gaps'] += 1
+        elif score > 57:
+            gap_distribution['considerable_gaps'] += 1
+        elif score > 43:
+            gap_distribution['critical_gaps'] += 1
+        elif score > 28:
+            gap_distribution['very_critical'] += 1
+        else:
+            gap_distribution['extremely_critical'] += 1
+
+    # Determine overall readiness level
+    overall_score = assessment.overall_score
+
+    if overall_score > 86:
+        readiness_level = 'Exceptional'
+        readiness_description = 'Your business demonstrates exceptional exit readiness with best-in-class practices.'
+    elif overall_score > 72:
+        readiness_level = 'Strong'
+        readiness_description = 'Your business shows strong exit readiness with well-documented and transferable processes.'
+    elif overall_score > 57:
+        readiness_level = 'Moderate'
+        readiness_description = 'Your business has a solid foundation but requires focused improvements in key areas.'
+    elif overall_score > 43:
+        readiness_level = 'Developing'
+        readiness_description = 'Your business needs significant work to reach optimal exit readiness.'
+    elif overall_score > 28:
+        readiness_level = 'Early Stage'
+        readiness_description = 'Your business requires substantial development across multiple critical areas.'
+    else:
+        readiness_level = 'Foundation Building'
+        readiness_description = 'Your business is in the early stages of exit preparation and needs comprehensive development.'
+
+    # Generate CEPA-level interpretation
+    cepa_interpretation = generate_cepa_interpretation(
+        overall_score,
+        readiness_level,
+        strengths,
+        weaknesses,
+        gap_distribution,
+        assessment.answered_questions
+    )
+
+    # Generate strategic recommendations
+    recommendations = generate_strategic_recommendations(
+        overall_score,
+        weaknesses,
+        gap_distribution
+    )
+
+    return jsonify({
+        'assessment_id': assessment_id,
+        'overall_score': overall_score,
+        'readiness_level': readiness_level,
+        'readiness_description': readiness_description,
+        'answered_questions': assessment.answered_questions,
+        'strengths': strengths,
+        'weaknesses': weaknesses,
+        'gap_distribution': gap_distribution,
+        'cepa_interpretation': cepa_interpretation,
+        'recommendations': recommendations,
+        'next_steps': generate_next_steps(weaknesses, gap_distribution)
+    })
+
+
+def generate_cepa_interpretation(overall_score, readiness_level, strengths, weaknesses, gap_distribution, answered_questions):
+    """Generate detailed CEPA-level interpretation of assessment results"""
+
+    interpretation = {
+        'executive_summary': '',
+        'value_drivers': '',
+        'risk_factors': '',
+        'transferability_analysis': '',
+        'market_positioning': ''
+    }
+
+    # Executive Summary
+    interpretation['executive_summary'] = (
+        f"Based on your comprehensive assessment of {answered_questions} business attributes, "
+        f"your business has achieved an overall attractiveness score of {overall_score:.1f}%, "
+        f"placing you in the '{readiness_level}' category for exit readiness.\n\n"
+    )
+
+    if overall_score >= 67:
+        interpretation['executive_summary'] += (
+            "Congratulations! Your business has crossed the critical 67% threshold, entering the 'green zone' "
+            "where businesses become significantly more attractive to buyers and command premium valuations. "
+        )
+    else:
+        target_improvement = 67 - overall_score
+        interpretation['executive_summary'] += (
+            f"Your business is currently {target_improvement:.1f}% below the critical 67% 'green zone' threshold. "
+            f"Reaching this milestone will significantly increase your business's attractiveness to buyers. "
+        )
+
+    # Value Drivers Analysis
+    if strengths:
+        strength_text = ", ".join([f"{s['category']} ({s['score']:.1f}%)" for s in strengths])
+        interpretation['value_drivers'] = (
+            f"Your strongest value drivers are: {strength_text}. These areas represent competitive advantages "
+            f"that potential buyers will view favorably. They demonstrate established systems, clear documentation, "
+            f"and reduced dependency on the owner. Maintain and leverage these strengths as you work on improvement areas."
+        )
+    else:
+        interpretation['value_drivers'] = (
+            "Your assessment indicates opportunities to develop stronger value drivers across all categories. "
+            "Focus on building documented, repeatable processes that can operate independently of owner involvement."
+        )
+
+    # Risk Factors
+    critical_count = gap_distribution['critical_gaps'] + gap_distribution['very_critical'] + gap_distribution['extremely_critical']
+    if critical_count > 0:
+        interpretation['risk_factors'] = (
+            f"Your assessment reveals {critical_count} areas with critical gaps that require immediate attention. "
+            f"These gaps represent significant risks that could reduce your valuation multiple or deter potential buyers. "
+        )
+
+        if weaknesses:
+            weakness_text = ", ".join([f"{w['category']} ({w['score']:.1f}%)" for w in weaknesses])
+            interpretation['risk_factors'] += (
+                f"Priority focus areas include: {weakness_text}. Addressing these systematically through the "
+                f"task management system will be essential for improving exit readiness."
+            )
+    else:
+        interpretation['risk_factors'] = (
+            "Your business shows minimal critical risk factors, with most areas demonstrating adequate to strong performance. "
+            "Continue monitoring and incrementally improving to maintain this positive trajectory."
+        )
+
+    # Transferability Analysis
+    if overall_score > 72:
+        interpretation['transferability_analysis'] = (
+            "Your business demonstrates strong transferability characteristics. Clear documentation, established processes, "
+            "and reduced owner dependency indicate that operations can continue successfully post-transition. "
+            "This significantly enhances your appeal to strategic and financial buyers."
+        )
+    elif overall_score > 57:
+        interpretation['transferability_analysis'] = (
+            "Your business shows moderate transferability. While some systems are documented and processes are established, "
+            "there are key areas where owner knowledge and involvement remain critical. Focus on documenting these areas "
+            "and developing second-tier leadership to improve transferability."
+        )
+    else:
+        interpretation['transferability_analysis'] = (
+            "Transferability represents a significant development opportunity for your business. Buyers need confidence "
+            "that the business can operate successfully without the current owner. Prioritize documenting processes, "
+            "reducing owner dependency, and developing management team capabilities."
+        )
+
+    # Market Positioning
+    if overall_score > 86:
+        interpretation['market_positioning'] = (
+            "Your business is positioned in the top tier of potential acquisition targets. Best-in-class practices "
+            "and exceptional performance across key metrics make you highly attractive to premium buyers. "
+            "You are well-positioned to command strong valuation multiples and favorable terms."
+        )
+    elif overall_score > 72:
+        interpretation['market_positioning'] = (
+            "Your business is well-positioned for a successful exit. Strong performance in key areas makes you attractive "
+            "to both strategic and financial buyers. Continue refining areas with minor gaps to maximize valuation."
+        )
+    elif overall_score > 57:
+        interpretation['market_positioning'] = (
+            "Your business represents a solid opportunity for buyers willing to invest in operational improvements. "
+            "To maximize valuation and expand your buyer pool, focus on elevating your weakest categories to at least "
+            "the 'considerable gaps' threshold (57%+)."
+        )
+    else:
+        interpretation['market_positioning'] = (
+            "Your business is in the development phase of exit preparation. Focus on building a strong foundation "
+            "across all categories before actively marketing the business. The improvements you make now will have "
+            "significant impact on your eventual valuation and transaction success."
+        )
+
+    return interpretation
+
+
+def generate_strategic_recommendations(overall_score, weaknesses, gap_distribution):
+    """Generate strategic recommendations based on assessment results"""
+
+    recommendations = []
+
+    # Recommendation 1: Address critical gaps first
+    critical_count = gap_distribution['critical_gaps'] + gap_distribution['very_critical'] + gap_distribution['extremely_critical']
+    if critical_count > 10:
+        recommendations.append({
+            'priority': 'Immediate',
+            'title': 'De-Risk Critical Areas',
+            'description': (
+                f"With {critical_count} critical gaps identified, your immediate priority should be de-risking activities. "
+                f"Use the task management system to address extremely critical and very critical gaps first, "
+                f"as these pose the greatest threat to valuation and transaction success."
+            )
+        })
+
+    # Recommendation 2: Strengthen weak categories
+    if weaknesses and len(weaknesses) > 0:
+        bottom_category = weaknesses[0]
+        recommendations.append({
+            'priority': 'High',
+            'title': f'Strengthen {bottom_category["category"]}',
+            'description': (
+                f'{bottom_category["category"]} scored {bottom_category["score"]:.1f}%, representing your weakest area. '
+                f'Focus on this category after addressing immediate critical gaps. Even moderate improvements here '
+                f'will have significant impact on your overall attractiveness score.'
+            )
+        })
+
+    # Recommendation 3: Build systematic documentation
+    if overall_score < 72:
+        recommendations.append({
+            'priority': 'High',
+            'title': 'Implement Systematic Documentation',
+            'description': (
+                'Documented, repeatable processes are the foundation of business transferability. Create standard '
+                'operating procedures (SOPs) for key functions, implement knowledge management systems, and ensure '
+                'critical business information is captured outside of any single individual.'
+            )
+        })
+
+    # Recommendation 4: Reduce owner dependency
+    recommendations.append({
+        'priority': 'Medium',
+        'title': 'Reduce Owner Dependency',
+        'description': (
+            'Develop second-tier leadership and delegate key responsibilities. Buyers need confidence that the '
+            'business can thrive without the current owner. Create succession plans for critical roles and '
+            'demonstrate that operations can run smoothly during extended owner absences.'
+        )
+    })
+
+    # Recommendation 5: Establish regular assessment cycles
+    recommendations.append({
+        'priority': 'Medium',
+        'title': 'Implement Quarterly Progress Reviews',
+        'description': (
+            'Retake this assessment quarterly to track your progress. Set specific score targets for each category '
+            'and measure improvement over time. This data will demonstrate to buyers that you have a culture of '
+            'continuous improvement and data-driven decision making.'
+        )
+    })
+
+    return recommendations
+
+
+def generate_next_steps(weaknesses, gap_distribution):
+    """Generate specific next steps for the user"""
+
+    next_steps = []
+
+    # Step 1: Review the detailed analysis
+    next_steps.append({
+        'step': 1,
+        'action': 'Review Your Detailed Assessment',
+        'description': 'Carefully review each category and the specific questions where gaps were identified. Understanding the "why" behind your scores is crucial for improvement.',
+        'timeframe': 'This week'
+    })
+
+    # Step 2: Access the task manager
+    next_steps.append({
+        'step': 2,
+        'action': 'Access Your Task Manager',
+        'description': 'The task manager will generate 5-15 specific, actionable tasks for each of the 89 questions based on your responses. These tasks provide a clear roadmap for improvement.',
+        'timeframe': 'This week'
+    })
+
+    # Step 3: Prioritize de-risking activities
+    critical_count = gap_distribution['critical_gaps'] + gap_distribution['very_critical'] + gap_distribution['extremely_critical']
+    if critical_count > 0:
+        next_steps.append({
+            'step': 3,
+            'action': 'Prioritize De-Risking Activities',
+            'description': f'Focus on the {critical_count} questions with critical gaps. These represent the highest-risk areas that could significantly impact your valuation.',
+            'timeframe': 'Next 30 days'
+        })
+
+    # Step 4: Focus on weakest category
+    if weaknesses and len(weaknesses) > 0:
+        bottom_category = weaknesses[0]
+        next_steps.append({
+            'step': 4,
+            'action': f'Develop {bottom_category["category"]} Improvement Plan',
+            'description': f'Create a focused improvement plan for {bottom_category["category"]}, your lowest-scoring category. Target a 15-20% improvement within 90 days.',
+            'timeframe': 'Next 90 days'
+        })
+
+    # Step 5: Schedule follow-up assessment
+    next_steps.append({
+        'step': 5,
+        'action': 'Schedule Your Next Assessment',
+        'description': 'Set a reminder to retake this assessment in 90 days. Track your progress and celebrate improvements. Consistent measurement drives consistent improvement.',
+        'timeframe': '90 days from now'
+    })
+
+    return next_steps
