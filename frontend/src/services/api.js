@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../lib/supabase';
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -9,12 +10,23 @@ const api = axios.create({
 });
 
 // Request interceptor to add JWT token to all requests
+// Supports both Flask tokens (localStorage) and Supabase tokens
 api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  async (config) => {
+    // First, check for Supabase session token
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.access_token) {
+      // Use Supabase token if available
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    } else {
+      // Fall back to Flask token from localStorage
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
+
     return config;
   },
   (error) => {
@@ -27,11 +39,18 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid - clear both auth systems
       localStorage.removeItem('token');
-      window.location.href = '/';
+
+      // Sign out from Supabase if session exists
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.auth.signOut();
+      }
+
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

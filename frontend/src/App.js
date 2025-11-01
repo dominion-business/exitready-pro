@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { AuthProvider as SupabaseAuthProvider } from './contexts/AuthContext';
 import LoginForm from './components/LoginForm';
+import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import EnhancedDashboard from './pages/EnhancedDashboard';
 import BusinessProfile from './pages/BusinessProfile';
@@ -15,10 +17,12 @@ import TaskManager from './pages/TaskManager';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginForm />} />
+    <SupabaseAuthProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/dashboard"
             element={
@@ -106,10 +110,11 @@ function App() {
             }
           />
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </SupabaseAuthProvider>
   );
 }
 
