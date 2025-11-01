@@ -630,7 +630,7 @@ const EnhancedDashboard = () => {
 
               {taskStats && taskStats.total > 0 ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
                       <div className="text-2xl font-bold">{taskStats.not_started}</div>
                       <div className="text-xs text-indigo-100">Not Started</div>
@@ -638,6 +638,10 @@ const EnhancedDashboard = () => {
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
                       <div className="text-2xl font-bold">{taskStats.in_progress}</div>
                       <div className="text-xs text-indigo-100">In Progress</div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
+                      <div className="text-2xl font-bold">{taskStats.under_review}</div>
+                      <div className="text-xs text-indigo-100">Under Review</div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 text-center">
                       <div className="text-2xl font-bold">{taskStats.completed}</div>

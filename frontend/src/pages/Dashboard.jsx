@@ -19,7 +19,8 @@ const Dashboard = () => {
     readinessScore: 0,
     tasksCompleted: 0,
     daysToExit: '-',
-    valuationCount: 0
+    valuationCount: 0,
+    taskStats: null
   });
 
   useEffect(() => {
@@ -37,11 +38,24 @@ const Dashboard = () => {
 
       const valuations = valuationResponse.data.valuations || [];
 
+      // Fetch task stats
+      const taskResponse = await axios.get('http://localhost:5000/api/tasks/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const taskStats = taskResponse.data.stats || null;
+
       if (valuations.length > 0) {
         setStats(prev => ({
           ...prev,
           valuation: valuations[0].valuation_amount,
-          valuationCount: valuations.length
+          valuationCount: valuations.length,
+          taskStats
+        }));
+      } else {
+        setStats(prev => ({
+          ...prev,
+          taskStats
         }));
       }
     } catch (error) {
@@ -87,15 +101,43 @@ const Dashboard = () => {
           <p className="text-xs text-gray-500 mt-1">Not yet assessed</p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div
+          onClick={() => navigate('/task-manager')}
+          className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all"
+        >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Tasks Completed</span>
+            <span className="text-sm text-gray-600">Task Manager</span>
             <FileText className="text-purple-600" size={20} />
           </div>
-          <p className="text-2xl font-bold text-gray-900">
-            {stats.tasksCompleted}/0
-          </p>
-          <p className="text-xs text-gray-500 mt-1">No tasks yet</p>
+          {stats.taskStats ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between py-0.5">
+                <span className="text-xs text-gray-600">Not Started</span>
+                <span className="text-sm font-bold text-red-600">{stats.taskStats.not_started}</span>
+              </div>
+              <div className="flex items-center justify-between py-0.5">
+                <span className="text-xs text-gray-600">In Progress</span>
+                <span className="text-sm font-bold text-blue-600">{stats.taskStats.in_progress}</span>
+              </div>
+              <div className="flex items-center justify-between py-0.5">
+                <span className="text-xs text-gray-600">Under Review</span>
+                <span className="text-sm font-bold text-purple-600">{stats.taskStats.under_review}</span>
+              </div>
+              <div className="flex items-center justify-between py-0.5">
+                <span className="text-xs text-gray-600">Completed</span>
+                <span className="text-sm font-bold text-green-600">{stats.taskStats.completed}</span>
+              </div>
+              <div className="pt-2 mt-1 border-t border-gray-200 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-700">Completion Rate</span>
+                <span className="text-sm font-bold text-blue-700">{stats.taskStats.completion_rate}%</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-gray-900">0/0</p>
+              <p className="text-xs text-gray-500 mt-1">No tasks yet</p>
+            </>
+          )}
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

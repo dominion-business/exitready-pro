@@ -280,6 +280,105 @@ const TaskManager = () => {
     setCalendarDate(newDate);
   };
 
+  // Get holidays and special dates for a given date
+  const getHolidaysForDate = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth(); // 0-11
+    const day = date.getDate();
+
+    const holidays = [];
+
+    // Fixed date holidays
+    if (month === 0 && day === 1) holidays.push("New Year's Day");
+    if (month === 1 && day === 2) holidays.push("Groundhog Day");
+    if (month === 1 && day === 14) holidays.push("Valentine's Day");
+    if (month === 2 && day === 17) holidays.push("St. Patrick's Day");
+    if (month === 3 && day === 22) holidays.push("Earth Day");
+    if (month === 4 && day === 5) holidays.push("Cinco de Mayo");
+    if (month === 6 && day === 4) holidays.push("Independence Day");
+    if (month === 9 && day === 31) holidays.push("Halloween");
+    if (month === 10 && day === 11) holidays.push("Veterans Day");
+    if (month === 11 && day === 24) holidays.push("Christmas Eve");
+    if (month === 11 && day === 25) holidays.push("Christmas Day");
+    if (month === 11 && day === 31) holidays.push("New Year's Eve");
+
+    // MLK Day - Third Monday in January
+    if (month === 0) {
+      const firstDay = new Date(year, 0, 1);
+      const firstMonday = 1 + ((8 - firstDay.getDay()) % 7);
+      const thirdMonday = firstMonday + 14;
+      if (day === thirdMonday) holidays.push("Martin Luther King Jr. Day");
+    }
+
+    // Presidents Day - Third Monday in February
+    if (month === 1) {
+      const firstDay = new Date(year, 1, 1);
+      const firstMonday = 1 + ((8 - firstDay.getDay()) % 7);
+      const thirdMonday = firstMonday + 14;
+      if (day === thirdMonday) holidays.push("Presidents' Day");
+    }
+
+    // Memorial Day - Last Monday in May
+    if (month === 4) {
+      const lastDay = new Date(year, 5, 0).getDate();
+      let lastMonday = lastDay;
+      const lastDayOfWeek = new Date(year, 4, lastDay).getDay();
+      lastMonday = lastDay - ((lastDayOfWeek + 6) % 7);
+      if (day === lastMonday) holidays.push("Memorial Day");
+    }
+
+    // Juneteenth - June 19
+    if (month === 5 && day === 19) holidays.push("Juneteenth");
+
+    // Labor Day - First Monday in September
+    if (month === 8) {
+      const firstDay = new Date(year, 8, 1);
+      const firstMonday = 1 + ((8 - firstDay.getDay()) % 7);
+      if (day === firstMonday) holidays.push("Labor Day");
+    }
+
+    // Columbus Day - Second Monday in October
+    if (month === 9) {
+      const firstDay = new Date(year, 9, 1);
+      const firstMonday = 1 + ((8 - firstDay.getDay()) % 7);
+      const secondMonday = firstMonday + 7;
+      if (day === secondMonday) holidays.push("Columbus Day");
+    }
+
+    // Thanksgiving - Fourth Thursday in November
+    if (month === 10) {
+      const firstDay = new Date(year, 10, 1);
+      const firstThursday = 1 + ((11 - firstDay.getDay()) % 7);
+      const fourthThursday = firstThursday + 21;
+      if (day === fourthThursday) holidays.push("Thanksgiving Day");
+      if (day === fourthThursday + 1) holidays.push("Black Friday");
+    }
+
+    // Seasonal dates (approximate)
+    if (month === 2 && day >= 19 && day <= 21) holidays.push("First Day of Spring");
+    if (month === 5 && day >= 20 && day <= 22) holidays.push("First Day of Summer");
+    if (month === 8 && day >= 21 && day <= 23) holidays.push("First Day of Fall");
+    if (month === 11 && day >= 20 && day <= 22) holidays.push("First Day of Winter");
+
+    // Mother's Day - Second Sunday in May
+    if (month === 4) {
+      const firstDay = new Date(year, 4, 1);
+      const firstSunday = 1 + ((7 - firstDay.getDay()) % 7);
+      const secondSunday = firstSunday + 7;
+      if (day === secondSunday) holidays.push("Mother's Day");
+    }
+
+    // Father's Day - Third Sunday in June
+    if (month === 5) {
+      const firstDay = new Date(year, 5, 1);
+      const firstSunday = 1 + ((7 - firstDay.getDay()) % 7);
+      const thirdSunday = firstSunday + 14;
+      if (day === thirdSunday) holidays.push("Father's Day");
+    }
+
+    return holidays;
+  };
+
   // Calendar View Helper Functions
   const getCalendarData = () => {
     const today = new Date();
@@ -305,7 +404,8 @@ const TaskManager = () => {
             dateStr: dateStr,
             isCurrentMonth: true,
             isToday: currentDate.toDateString() === today.toDateString(),
-            tasks: dayTasks
+            tasks: dayTasks,
+            holidays: getHolidaysForDate(currentDate)
           });
         }
 
@@ -334,7 +434,8 @@ const TaskManager = () => {
             dateStr: dateStr,
             isCurrentMonth: true,
             isToday: currentDate.toDateString() === today.toDateString(),
-            tasks: dayTasks
+            tasks: dayTasks,
+            holidays: getHolidaysForDate(currentDate)
           });
         }
 
@@ -368,7 +469,8 @@ const TaskManager = () => {
               dateStr: dateStr,
               isCurrentMonth: currentDate.getMonth() === month,
               isToday: currentDate.toDateString() === today.toDateString(),
-              tasks: dayTasks
+              tasks: dayTasks,
+              holidays: getHolidaysForDate(currentDate)
             });
 
             currentDate.setDate(currentDate.getDate() + 1);
@@ -569,31 +671,52 @@ const TaskManager = () => {
           {/* Inline Compact Stats - High Contrast */}
           {stats && (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              <div className="bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 border-white/40 shadow-lg">
+              <div
+                onClick={() => setFilter('all')}
+                className={`bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 shadow-lg hover:bg-white/40 hover:border-white/70 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'all' ? 'border-white/70 ring-2 ring-white' : 'border-white/40'}`}
+              >
                 <p className="text-xs text-white font-bold mb-1">Total</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.total}</p>
               </div>
-              <div className="bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 border-red-200/50 shadow-lg">
+              <div
+                onClick={() => setFilter('not_started')}
+                className={`bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 shadow-lg hover:bg-red-500/80 hover:border-red-300 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'not_started' ? 'bg-red-500/60 border-red-300 ring-2 ring-red-400' : 'border-red-200/50'}`}
+              >
                 <p className="text-xs text-white font-bold mb-1">Not Started</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.not_started}</p>
               </div>
-              <div className="bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 border-blue-200/50 shadow-lg">
+              <div
+                onClick={() => setFilter('in_progress')}
+                className={`bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 shadow-lg hover:bg-blue-500/80 hover:border-blue-300 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'in_progress' ? 'bg-blue-500/60 border-blue-300 ring-2 ring-blue-400' : 'border-blue-200/50'}`}
+              >
                 <p className="text-xs text-white font-bold mb-1">In Progress</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.in_progress}</p>
               </div>
-              <div className="bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 border-purple-200/50 shadow-lg">
-                <p className="text-xs text-white font-bold mb-1">Review</p>
+              <div
+                onClick={() => setFilter('under_review')}
+                className={`bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 shadow-lg hover:bg-purple-500/80 hover:border-purple-300 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'under_review' ? 'bg-purple-500/60 border-purple-300 ring-2 ring-purple-400' : 'border-purple-200/50'}`}
+              >
+                <p className="text-xs text-white font-bold mb-1">Under Review</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.under_review}</p>
               </div>
-              <div className="bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 border-green-200/50 shadow-lg">
+              <div
+                onClick={() => setFilter('completed')}
+                className={`bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 shadow-lg hover:bg-green-500/80 hover:border-green-300 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'completed' ? 'bg-green-500/60 border-green-300 ring-2 ring-green-400' : 'border-green-200/50'}`}
+              >
                 <p className="text-xs text-white font-bold mb-1">Completed</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.completed}</p>
               </div>
-              <div className="bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 border-gray-200/50 shadow-lg">
+              <div
+                onClick={() => setFilter('not_relevant')}
+                className={`bg-white/25 backdrop-blur-md rounded-lg p-3 border-2 shadow-lg hover:bg-gray-500/80 hover:border-gray-300 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'not_relevant' ? 'bg-gray-500/60 border-gray-300 ring-2 ring-gray-400' : 'border-gray-200/50'}`}
+              >
                 <p className="text-xs text-white font-bold mb-1">Not Relevant</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.not_relevant}</p>
               </div>
-              <div className="bg-white/30 backdrop-blur-md rounded-lg p-3 border-2 border-white/60 shadow-xl">
+              <div
+                onClick={() => setFilter('all')}
+                className={`bg-white/30 backdrop-blur-md rounded-lg p-3 border-2 shadow-xl hover:bg-white/50 hover:border-white/80 hover:scale-105 transition-all duration-200 cursor-pointer ${filter === 'all' ? 'border-white/80 ring-2 ring-white' : 'border-white/60'}`}
+              >
                 <p className="text-xs text-white font-bold mb-1">Completion</p>
                 <p className="text-2xl font-extrabold text-white drop-shadow-md">{stats.completion_rate}%</p>
                 <p className="text-xs text-white font-semibold">{stats.completed}/{stats.relevant_tasks}</p>
@@ -712,7 +835,7 @@ const TaskManager = () => {
                       onClick={() => setActivityTypeFilter(type)}
                       className={`px-2.5 py-1 rounded text-xs font-medium transition ${
                         activityTypeFilter === type
-                          ? 'bg-green-600 text-white shadow-sm'
+                          ? 'bg-emerald-600 text-white shadow-sm'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -724,7 +847,7 @@ const TaskManager = () => {
 
               {/* Intangible Capital Type Filter - Extra Compact */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-600 min-w-[60px]">Capital:</span>
+                <span className="text-xs font-semibold text-gray-600 min-w-[60px]">Intangibles:</span>
                 <div className="flex gap-1.5 flex-wrap">
                   {['all', 'Human', 'Structural', 'Customer', 'Social', 'Revenue & Profitability'].map((type) => (
                     <button
@@ -771,22 +894,6 @@ const TaskManager = () => {
                 </div>
               </div>
 
-          {/* Show Not Relevant Checkbox */}
-              {filter === 'all' && (
-                <div className="flex items-center gap-2 mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="showNotRelevant"
-                    checked={showNotRelevant}
-                    onChange={(e) => setShowNotRelevant(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500 rounded"
-                  />
-                  <label htmlFor="showNotRelevant" className="text-sm text-gray-700 font-medium cursor-pointer">
-                    Show "Not Relevant" tasks
-                  </label>
-                </div>
-              )}
-
               {questionFilter && (
                 <div className="flex items-center gap-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
                   <span className="text-sm text-purple-700 font-medium">
@@ -823,158 +930,128 @@ const TaskManager = () => {
             <>
               {/* LIST VIEW */}
               {viewMode === 'list' && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition bg-white cursor-pointer"
+                      className="border border-gray-200 rounded-lg p-3 hover:shadow-md hover:border-blue-300 transition bg-white cursor-pointer group"
                       onClick={() => setSelectedTask(task)}
                     >
-                      {/* Task Header - Title and Actions */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {/* Compact Single-Line Layout */}
+                      <div className="flex items-center gap-3">
+                        {/* Status Icon */}
+                        <div className="flex-shrink-0">
                           {getStatusIcon(task.status)}
-                          <h3 className={`text-base font-semibold truncate ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                        </div>
+
+                        {/* Task Title */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`text-sm font-semibold truncate ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                             {task.title}
                           </h3>
                         </div>
-                        {!task.is_system_task && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteTask(task.id);
-                            }}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded transition flex-shrink-0"
-                            title="Delete task"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
 
-                      {/* Task Details - Compact Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Status */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600 font-medium">Status:</span>
-                          <select
-                            value={task.status}
-                            onChange={(e) => updateTaskStatus(task.id, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`flex-1 px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-blue-400 ${getStatusColor(task.status)}`}
-                          >
-                            <option value="not_started">Not Started</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="under_review">Under Review</option>
-                            <option value="completed">Completed</option>
-                            <option value="not_relevant">Not Relevant</option>
-                          </select>
-                        </div>
+                        {/* Icon Tags with Hover Tooltips */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Status Badge */}
+                          <div className="relative group/status">
+                            <div className={`w-2 h-2 rounded-full ${
+                              task.status === 'completed' ? 'bg-green-500' :
+                              task.status === 'in_progress' ? 'bg-blue-500' :
+                              task.status === 'under_review' ? 'bg-purple-500' :
+                              task.status === 'not_relevant' ? 'bg-gray-400' :
+                              'bg-red-500'
+                            }`}></div>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/status:opacity-100 transition pointer-events-none z-10">
+                              Status: {task.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </div>
+                          </div>
 
-                        {/* Priority */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600 font-medium">Priority:</span>
-                          <select
-                            value={task.priority}
-                            onChange={(e) => updateTaskPriority(task.id, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`flex-1 px-2 py-1 rounded text-xs font-medium border focus:outline-none focus:ring-1 focus:ring-blue-400 ${getPriorityColor(task.priority)}`}
-                          >
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                          </select>
-                        </div>
+                          {/* Priority Flag */}
+                          <div className="relative group/priority">
+                            <Flag size={14} className={`${
+                              task.priority === 'high' ? 'text-red-600 fill-red-600' :
+                              task.priority === 'medium' ? 'text-yellow-600 fill-yellow-600' :
+                              'text-green-600 fill-green-600'
+                            }`} />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/priority:opacity-100 transition pointer-events-none z-10">
+                              Priority: {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </div>
+                          </div>
 
-                        {/* Due Date */}
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-gray-600 font-medium whitespace-nowrap">Due:</span>
-                          <input
-                            type="date"
-                            value={task.due_date || ''}
-                            onChange={(e) => updateTaskStatus(task.id, task.status, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateTaskStatus(task.id, task.status, '');
-                            }}
-                            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition whitespace-nowrap"
-                            title="Clear due date"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Quick Date Buttons */}
-                      <div className="flex items-center gap-1 mt-2">
-                        <span className="text-xs text-gray-500">Quick:</span>
-                        <button
-                          onClick={() => {
-                            const date = new Date();
-                            date.setDate(date.getDate() + 7);
-                            updateTaskStatus(task.id, task.status, date.toISOString().split('T')[0]);
-                          }}
-                          className="px-2 py-0.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition"
-                        >
-                          7d
-                        </button>
-                        <button
-                          onClick={() => {
-                            const date = new Date();
-                            date.setMonth(date.getMonth() + 1);
-                            updateTaskStatus(task.id, task.status, date.toISOString().split('T')[0]);
-                          }}
-                          className="px-2 py-0.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition"
-                        >
-                          1m
-                        </button>
-                        <button
-                          onClick={() => {
-                            const date = new Date();
-                            date.setMonth(date.getMonth() + 3);
-                            updateTaskStatus(task.id, task.status, date.toISOString().split('T')[0]);
-                          }}
-                          className="px-2 py-0.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition"
-                        >
-                          3m
-                        </button>
-                        <button
-                          onClick={() => {
-                            const date = new Date();
-                            date.setMonth(date.getMonth() + 6);
-                            updateTaskStatus(task.id, task.status, date.toISOString().split('T')[0]);
-                          }}
-                          className="px-2 py-0.5 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition"
-                        >
-                          6m
-                        </button>
-                      </div>
-
-                      {/* Question Tags (if available) */}
-                      {task.question && (
-                        <div className="mt-2 pt-2 border-t border-gray-100 flex flex-wrap gap-1.5">
-                          <span className="inline-flex items-center px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs font-medium">
-                            <span className="font-semibold mr-1">Category:</span> {task.question.category_display}
-                          </span>
-                          <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-medium">
-                            <span className="font-semibold mr-1">Theme:</span> {task.question.subject}
-                          </span>
-                          {task.question.activity_type && (
-                            <span className="inline-flex items-center px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs font-medium">
-                              <span className="font-semibold mr-1">Activity Type:</span> {task.question.activity_type}
-                            </span>
+                          {/* Due Date Calendar */}
+                          {task.due_date && (
+                            <div className="relative group/date">
+                              <Calendar size={14} className="text-indigo-600" />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/date:opacity-100 transition pointer-events-none z-10">
+                                Due Date: {new Date(task.due_date).toLocaleDateString()}
+                              </div>
+                            </div>
                           )}
-                          {task.question.intangible_asset_type && (
-                            <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-xs font-medium">
-                              <span className="font-semibold mr-1">Intangible Capital:</span> {task.question.intangible_asset_type}
-                            </span>
+
+                          {/* Activity Type */}
+                          {task.question?.activity_type && (
+                            <div className="relative group/activity">
+                              <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-emerald-700">A</span>
+                              </div>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/activity:opacity-100 transition pointer-events-none z-10">
+                                Activity: {task.question.activity_type}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Intangible Capital */}
+                          {task.question?.intangible_asset_type && (
+                            <div className="relative group/capital">
+                              <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-amber-700">I</span>
+                              </div>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/capital:opacity-100 transition pointer-events-none z-10">
+                                Intangibles: {task.question.intangible_asset_type}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Category */}
+                          {task.question?.category_display && (
+                            <div className="relative group/category">
+                              <div className="w-5 h-5 rounded-full bg-fuchsia-100 flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-fuchsia-700">C</span>
+                              </div>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/category:opacity-100 transition pointer-events-none z-10">
+                                Category: {task.question.category_display}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Theme */}
+                          {task.question?.subject && (
+                            <div className="relative group/theme">
+                              <div className="w-5 h-5 rounded-full bg-cyan-100 flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-cyan-700">T</span>
+                              </div>
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/theme:opacity-100 transition pointer-events-none z-10 max-w-xs">
+                                Theme: {task.question.subject}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Delete Button (only for non-system tasks) */}
+                          {!task.is_system_task && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteTask(task.id);
+                              }}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded transition opacity-0 group-hover:opacity-100"
+                              title="Delete task"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -999,14 +1076,24 @@ const TaskManager = () => {
                     }`}
                     onClick={() => setSelectedDate(day.dateStr)}
                   >
-                    <div className={`text-sm font-semibold mb-1 ${
-                      selectedDate === day.dateStr ? 'text-indigo-700' :
-                      day.isToday ? 'text-blue-600' : day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                    }`}>
-                      {calendarPeriod === '5day' || calendarPeriod === '7day'
-                        ? day.date.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' })
-                        : day.date.getDate()
-                      }
+                    <div className="flex items-center justify-between mb-1">
+                      <div className={`text-sm font-semibold ${
+                        selectedDate === day.dateStr ? 'text-indigo-700' :
+                        day.isToday ? 'text-blue-600' : day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                      }`}>
+                        {calendarPeriod === '5day' || calendarPeriod === '7day'
+                          ? day.date.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' })
+                          : day.date.getDate()
+                        }
+                      </div>
+                      {day.holidays && day.holidays.length > 0 && (
+                        <div className="relative group/holiday">
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                          <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/holiday:opacity-100 transition pointer-events-none z-10">
+                            {day.holidays.join(', ')}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-1">
@@ -1138,9 +1225,49 @@ const TaskManager = () => {
                             <div className="grid grid-cols-7 gap-1 mt-1">
                               {monthData.weeks.map((week, weekIdx) => (
                                 week.map((day, dayIdx) => (
-                                  <React.Fragment key={`${idx}-${weekIdx}-${dayIdx}`}>
-                                    {renderTaskCell(day, 'min-h-[60px]', 1)}
-                                  </React.Fragment>
+                                  <div
+                                    key={`${idx}-${weekIdx}-${dayIdx}`}
+                                    className={`min-h-[60px] p-1 rounded text-xs cursor-pointer transition relative ${
+                                      day.isToday
+                                        ? 'bg-blue-100 border-2 border-blue-400 font-bold'
+                                        : day.isCurrentMonth
+                                        ? 'bg-white border border-gray-200 hover:border-blue-300'
+                                        : 'bg-gray-100 text-gray-400 border border-gray-100'
+                                    }`}
+                                    onClick={() => setSelectedDate(day.dateStr)}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className={`text-center text-xs ${day.isToday ? 'text-blue-600 font-bold' : ''}`}>
+                                        {day.date.getDate()}
+                                      </div>
+                                      {day.holidays && day.holidays.length > 0 && (
+                                        <div className="relative group/holiday">
+                                          <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                                          <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/holiday:opacity-100 transition pointer-events-none z-10">
+                                            {day.holidays.join(', ')}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {day.tasks.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 justify-center">
+                                        {day.tasks.map(task => (
+                                          <div key={task.id} className="relative group/task">
+                                            <div className={`w-2 h-2 rounded-full ${
+                                              task.status === 'completed' ? 'bg-green-500' :
+                                              task.status === 'in_progress' ? 'bg-blue-500' :
+                                              task.status === 'under_review' ? 'bg-purple-500' :
+                                              task.status === 'not_relevant' ? 'bg-gray-400' :
+                                              'bg-red-500'
+                                            }`}></div>
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/task:opacity-100 transition pointer-events-none z-20 max-w-[200px]">
+                                              {task.title}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 ))
                               ))}
                             </div>
@@ -1167,20 +1294,44 @@ const TaskManager = () => {
                                 week.map((day, dayIdx) => (
                                   <div
                                     key={`${idx}-${weekIdx}-${dayIdx}`}
-                                    className={`min-h-[40px] p-1 rounded text-xs ${
+                                    className={`min-h-[40px] p-0.5 rounded text-xs relative cursor-pointer transition ${
                                       day.isToday
                                         ? 'bg-blue-100 border border-blue-400 font-bold'
                                         : day.isCurrentMonth
-                                        ? 'bg-white'
-                                        : 'bg-gray-100 text-gray-400'
-                                    } ${day.tasks.length > 0 ? 'border-2 border-indigo-400' : ''}`}
+                                        ? 'bg-white border border-gray-200 hover:border-blue-300'
+                                        : 'bg-gray-100 text-gray-400 border border-gray-100'
+                                    }`}
+                                    onClick={() => setSelectedDate(day.dateStr)}
                                   >
-                                    <div className={`text-center ${day.isToday ? 'text-blue-600' : ''}`}>
-                                      {day.date.getDate()}
+                                    <div className="flex items-center justify-between px-1">
+                                      <div className={`text-center text-[10px] ${day.isToday ? 'text-blue-600 font-bold' : ''}`}>
+                                        {day.date.getDate()}
+                                      </div>
+                                      {day.holidays && day.holidays.length > 0 && (
+                                        <div className="relative group/holiday">
+                                          <div className="w-1 h-1 rounded-full bg-gray-400"></div>
+                                          <div className="absolute bottom-full right-0 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/holiday:opacity-100 transition pointer-events-none z-10">
+                                            {day.holidays.join(', ')}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                     {day.tasks.length > 0 && (
-                                      <div className="text-center text-xs font-bold text-indigo-600">
-                                        {day.tasks.length}
+                                      <div className="flex flex-wrap gap-0.5 justify-center px-0.5 pb-0.5">
+                                        {day.tasks.map(task => (
+                                          <div key={task.id} className="relative group/task">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${
+                                              task.status === 'completed' ? 'bg-green-500' :
+                                              task.status === 'in_progress' ? 'bg-blue-500' :
+                                              task.status === 'under_review' ? 'bg-purple-500' :
+                                              task.status === 'not_relevant' ? 'bg-gray-400' :
+                                              'bg-red-500'
+                                            }`}></div>
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/task:opacity-100 transition pointer-events-none z-20 max-w-[200px]">
+                                              {task.title}
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
                                     )}
                                   </div>

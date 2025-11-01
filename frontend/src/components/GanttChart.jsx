@@ -36,9 +36,16 @@ const GanttChart = ({ tasks, onTaskUpdate, onTaskClick }) => {
 
   const columnWidth = getColumnWidth();
 
-  // Parse date safely
+  // Parse date safely - handle YYYY-MM-DD format to avoid timezone issues
   const parseDate = (dateStr) => {
     if (!dateStr) return null;
+
+    // If date is in YYYY-MM-DD format, parse it explicitly in local timezone
+    if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? null : date;
   };
@@ -136,25 +143,37 @@ const GanttChart = ({ tasks, onTaskUpdate, onTaskClick }) => {
   // Get X position for a date
   const getXForDate = (date) => {
     if (!date || !viewStartDate) return 0;
-    const diffTime = date - viewStartDate;
+
+    // Normalize dates to midnight for consistent calculations
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const normalizedStart = new Date(viewStartDate);
+    normalizedStart.setHours(0, 0, 0, 0);
+
+    const diffTime = normalizedDate - normalizedStart;
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
     let position;
     switch (zoomLevel) {
       case 'day':
-        position = (diffDays * columnWidth);
+        // Each column represents 1 day
+        position = diffDays * columnWidth;
         break;
       case 'week':
-        position = ((diffDays / 7) * columnWidth);
+        // Each column represents 7 days
+        position = (diffDays / 7) * columnWidth;
         break;
       case 'month':
-        position = ((diffDays / 30) * columnWidth);
+        // Each column represents 30 days (approximate month)
+        position = (diffDays / 30) * columnWidth;
         break;
       case 'quarter':
-        position = ((diffDays / 90) * columnWidth);
+        // Each column represents 90 days (approximate quarter)
+        position = (diffDays / 90) * columnWidth;
         break;
       default:
-        position = ((diffDays / 7) * columnWidth);
+        position = (diffDays / 7) * columnWidth;
     }
 
     return position;

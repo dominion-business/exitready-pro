@@ -39,7 +39,10 @@ def get_tasks(current_user):
                     'question_id': question.question_id,
                     'subject': question.subject,
                     'category': question.category,
-                    'category_display': question.category_display
+                    'category_display': question.category_display,
+                    'activity_type': question.activity_type,
+                    'intangible_asset_type': question.intangible_asset_type,
+                    'question_text': question.question_text
                 }
             tasks_with_questions.append(task_dict)
 
@@ -70,7 +73,10 @@ def get_task(current_user, task_id):
                 'question_id': question.question_id,
                 'subject': question.subject,
                 'category': question.category,
-                'category_display': question.category_display
+                'category_display': question.category_display,
+                'activity_type': question.activity_type,
+                'intangible_asset_type': question.intangible_asset_type,
+                'question_text': question.question_text
             }
 
         return jsonify({
@@ -109,6 +115,7 @@ def create_task(current_user):
             description=data.get('description'),
             status=data.get('status', 'not_started'),
             priority=data.get('priority', 'medium'),
+            start_date=datetime.fromisoformat(data['start_date']).date() if data.get('start_date') else None,
             due_date=datetime.fromisoformat(data['due_date']).date() if data.get('due_date') else None,
             notes=data.get('notes')
         )
@@ -154,6 +161,8 @@ def update_task(current_user, task_id):
                 task.completed_at = None
         if 'priority' in data:
             task.priority = data['priority']
+        if 'start_date' in data:
+            task.start_date = datetime.fromisoformat(data['start_date']).date() if data['start_date'] else None
         if 'due_date' in data:
             task.due_date = datetime.fromisoformat(data['due_date']).date() if data['due_date'] else None
         if 'notes' in data:

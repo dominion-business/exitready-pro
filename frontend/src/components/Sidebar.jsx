@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Calculator, LogOut, TrendingUp, ClipboardCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Building2, Calculator, LogOut, TrendingUp, ClipboardCheck, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
@@ -14,6 +14,7 @@ const Sidebar = () => {
         { path: '/valuation', icon: Calculator, label: 'Valuation' },
         { path: '/valuation-dashboard', icon: TrendingUp, label: 'Valuation Dashboard' },
         { path: '/gap-analysis', icon: ClipboardCheck, label: 'Gap Analysis' },
+        { path: '/task-manager', icon: CheckCircle2, label: 'Task Manager' },
     ];
 
     const isActive = (path) => location.pathname === path;
